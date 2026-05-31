@@ -10,10 +10,32 @@ const devWorks = [
     href: 'https://typemin.github.io',
     status: 'wip' as const,
   },
+  {
+    title: 'GitHub Profile',
+    description: '개인 GitHub 프로필. 공부하면서 만들어본 프로젝트들과 코드 기록.',
+    tags: ['GitHub'],
+    href: 'https://github.com/TypeMIN',
+    status: 'done' as const,
+  },
 ];
 
-const photoWorks: { title: string; description: string; tags: string[]; href?: string; status: 'done' | 'wip' | 'archived' }[] = [];
-const musicWorks: { title: string; description: string; tags: string[]; href?: string; status: 'done' | 'wip' | 'archived' }[] = [];
+const photoWorks = [
+  {
+    title: '필름 사진 아카이브',
+    description: 'Canon AE-1 Program으로 찍은 필름 사진들. Kodak ColorPlus, Portra 등.',
+    tags: ['필름', 'Canon AE-1', 'Kodak'],
+    status: 'wip' as const,
+  },
+];
+
+const musicWorks = [
+  {
+    title: '작업 중인 루프들',
+    description: 'Logic Pro로 만든 짧은 루프 스케치들. 장르 없이 실험 중.',
+    tags: ['Logic Pro', 'MIDI', '작곡'],
+    status: 'wip' as const,
+  },
+];
 ---
 
 <BaseLayout title="Works — TypeMIN" description="TypeMIN의 개발, 사진, 음악 작업물 모음">
