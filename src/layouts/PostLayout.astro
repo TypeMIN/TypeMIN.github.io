@@ -1,0 +1,46 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+
+type Props = CollectionEntry<'posts'>['data'];
+
+const { title, description, pubDate, updatedDate, category } = Astro.props;
+
+const dateStr = pubDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const updatedStr = updatedDate?.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const categoryLabel: Record<string, string> = {
+  dev: 'Dev', photo: 'Photo', music: 'Music', writing: 'Writing', essay: 'Essay',
+};
+---
+
+<BaseLayout title={`${title} — TypeMIN`} description={description}>
+  <article class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+    <header class="post-header">
+      <span class={`badge badge--${category}`}>{categoryLabel[category]}</span>
+      <h1 class="post-title">{title}</h1>
+      <p class="post-desc">{description}</p>
+      <div class="post-meta">
+        <time datetime={pubDate.toISOString()}>{dateStr}</time>
+        {updatedDate && <span class="updated-on">· {updatedStr} 수정</span>}
+      </div>
+    </header>
+    <hr class="post-divider" />
+    <div class="prose">
+      <slot />
+    </div>
+    <div class="post-back">
+      <a href="/posts" class="btn btn--ghost">← 글 목록</a>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .post-header { margin-bottom: 1.5rem; }
+  .post-title { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; line-height: 1.2; margin: 0.75rem 0 0.5rem; color: var(--text-primary); }
+  .post-desc { font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  .post-meta { font-size: 0.8rem; color: var(--text-tertiary); }
+  .updated-on { color: var(--text-tertiary); }
+  .post-divider { border: none; border-top: 0.5px solid var(--border); margin: 1.5rem 0 2rem; }
+  .post-back { margin-top: 3rem; padding-top: 2rem; border-top: 0.5px solid var(--border); }
+</style>

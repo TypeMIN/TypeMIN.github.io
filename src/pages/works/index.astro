@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkCard from '../../components/WorkCard.astro';
+
+const devWorks = [
+  {
+    title: 'typemin.github.io',
+    description: 'Astro 5로 만든 개인 브랜드 사이트. 다크모드, 카테고리 필터, GitHub Actions 자동 배포.',
+    tags: ['Astro', 'TypeScript', 'GitHub Pages'],
+    href: 'https://typemin.github.io',
+    status: 'wip' as const,
+  },
+];
+
+const photoWorks: { title: string; description: string; tags: string[]; href?: string; status: 'done' | 'wip' | 'archived' }[] = [];
+const musicWorks: { title: string; description: string; tags: string[]; href?: string; status: 'done' | 'wip' | 'archived' }[] = [];
+---
+
+<BaseLayout title="Works — TypeMIN" description="TypeMIN의 개발, 사진, 음악 작업물 모음">
+  <div class="container" style="padding-top: 2.5rem; padding-bottom: 3rem;">
+    <h1 class="page-title">Works</h1>
+    <p class="page-desc">개발, 사진, 음악 작업물을 모아두는 곳이에요.</p>
+
+    <section class="works-section">
+      <div class="works-section__header">
+        <span class="badge badge--dev">Dev</span>
+      </div>
+      <div class="works-grid">
+        {devWorks.map(w => (
+          <WorkCard category="dev" {...w} />
+        ))}
+      </div>
+    </section>
+
+    <section class="works-section">
+      <div class="works-section__header">
+        <span class="badge badge--photo">Photo</span>
+      </div>
+      {photoWorks.length > 0 ? (
+        <div class="works-grid">
+          {photoWorks.map(w => <WorkCard category="photo" {...w} />)}
+        </div>
+      ) : (
+        <p class="placeholder">곧 채워질 예정이에요.</p>
+      )}
+    </section>
+
+    <section class="works-section">
+      <div class="works-section__header">
+        <span class="badge badge--music">Music</span>
+      </div>
+      {musicWorks.length > 0 ? (
+        <div class="works-grid">
+          {musicWorks.map(w => <WorkCard category="music" {...w} />)}
+        </div>
+      ) : (
+        <p class="placeholder">곧 채워질 예정이에요.</p>
+      )}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary); }
+  .page-desc { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 2.5rem; }
+
+  .works-section { margin-bottom: 2.5rem; }
+  .works-section__header { margin-bottom: 0.9rem; }
+  .works-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .placeholder { font-size: 0.85rem; color: var(--text-tertiary); padding: 1rem 0; }
+</style>

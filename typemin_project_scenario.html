@@ -1,0 +1,648 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.root{font-family:var(--font-sans,'Inter',sans-serif);padding:1rem 0 2rem}
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:20px;overflow-x:auto}
+.tab{font-size:12px;font-weight:500;padding:8px 14px;cursor:pointer;color:var(--color-text-tertiary);border-bottom:2px solid transparent;background:transparent;border-top:none;border-left:none;border-right:none;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:var(--color-text-primary)}
+.tab.on{color:var(--color-text-primary);border-bottom-color:var(--color-text-primary)}
+.panel{display:none}.panel.on{display:block}
+
+.phase{margin-bottom:14px;border:0.5px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden}
+.phase-header{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s}
+.phase-header:hover{background:var(--color-background-secondary)}
+.phase-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.phase-title{font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1}
+.phase-badge{font-size:9px;font-weight:600;padding:2px 8px;border-radius:99px}
+.phase-body{padding:0 14px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease}
+.phase-body.open{max-height:2000px;padding:0 14px 14px}
+
+.task-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.task{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:7px;background:var(--color-background-secondary)}
+.task-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.task-body{flex:1}
+.task-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.task-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.55}
+.task-prompt{font-size:10px;color:#4A6ABE;margin-top:4px;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.task-prompt:hover{text-decoration:underline}
+
+code{font-family:var(--font-mono,'monospace');font-size:11px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:4px;padding:1px 5px;color:var(--color-text-primary)}
+pre{font-family:var(--font-mono,'monospace');font-size:11px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px 12px;line-height:1.7;color:var(--color-text-primary);overflow-x:auto;margin:8px 0}
+
+.info-box{background:var(--color-background-secondary);border-radius:8px;padding:11px 13px;margin-bottom:10px;font-size:11px;color:var(--color-text-secondary);line-height:1.65}
+.info-box strong{font-weight:500;color:var(--color-text-primary)}
+
+.decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.decision-card{border-radius:8px;padding:11px 13px;border:0.5px solid var(--color-border-tertiary)}
+.decision-label{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px}
+.decision-value{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.decision-sub{font-size:10px;color:var(--color-text-tertiary);line-height:1.4}
+
+.swatch-row{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.sw{width:20px;height:20px;border-radius:4px;flex-shrink:0;title:''}
+.sw-label{font-size:9px;color:var(--color-text-tertiary);margin-top:3px}
+
+.file-tree{font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);line-height:1.9;padding:12px 14px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);margin-bottom:10px}
+.ft-dir{color:#4A6ABE}.ft-file{color:var(--color-text-primary)}.ft-cm{color:var(--color-text-tertiary)}
+
+.prompt-card{border:0.5px solid var(--color-border-secondary);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.prompt-header{padding:8px 12px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:space-between}
+.prompt-title{font-size:11px;font-weight:500;color:var(--color-text-primary)}
+.prompt-copy-btn{font-size:10px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;transition:background .12s}
+.prompt-copy-btn:hover{background:var(--color-background-primary)}
+.prompt-body{padding:10px 12px;font-family:var(--font-mono);font-size:10px;color:var(--color-text-secondary);line-height:1.7;background:var(--color-background-primary)}
+
+.action-btn{width:100%;font-size:12px;font-weight:500;padding:9px 18px;border-radius:7px;background:#1E3A8A;color:#EEF0FA;border:none;cursor:pointer;margin-top:10px;transition:opacity .15s}
+.action-btn:hover{opacity:.85}
+.ghost-btn{width:100%;font-size:12px;font-weight:500;padding:9px 18px;border-radius:7px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;margin-top:6px;transition:background .15s}
+.ghost-btn:hover{background:var(--color-background-secondary)}
+
+.tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:99px;display:inline-block}
+</style>
+
+<div class="root">
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden">TypeMIN 전체 프로젝트 시나리오</h2>
+
+<div class="tabs">
+  <div class="tab on" onclick="st('overview',this)">전체 개요</div>
+  <div class="tab" onclick="st('phase1',this)">Phase 1 · 뼈대</div>
+  <div class="tab" onclick="st('phase2',this)">Phase 2 · 콘텐츠</div>
+  <div class="tab" onclick="st('phase3',this)">Phase 3 · 완성</div>
+  <div class="tab" onclick="st('prompts',this)">Claude Code 프롬프트</div>
+</div>
+
+<!-- ── 전체 개요 ── -->
+<div class="panel on" id="panel-overview">
+
+  <div class="info-box">
+    지금까지 결정된 모든 내용의 최종 요약이에요. 이 페이지를 기준으로 Claude Code 작업을 진행합니다.
+  </div>
+
+  <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:10px">확정 사항</div>
+
+  <div class="decision-grid">
+    <div class="decision-card">
+      <div class="decision-label">사이트</div>
+      <div class="decision-value">typemin.github.io</div>
+      <div class="decision-sub">Astro 5 + GitHub Pages<br>GitHub Actions 자동 배포</div>
+    </div>
+    <div class="decision-card">
+      <div class="decision-label">브랜드 구조</div>
+      <div class="decision-value">Hybrid 모델</div>
+      <div class="decision-sub">TypeMIN 허브 + Dev/Photo/Music/Writing 서브<br>나중에 분리 가능한 구조</div>
+    </div>
+    <div class="decision-card">
+      <div class="decision-label">테마</div>
+      <div class="decision-value">다크모드 기본</div>
+      <div class="decision-sub">라이트/다크 토글 지원<br>[data-theme] + localStorage</div>
+    </div>
+    <div class="decision-card">
+      <div class="decision-label">폰트</div>
+      <div class="decision-value">Pretendard + JetBrains Mono</div>
+      <div class="decision-sub">한/영 대응 sans-serif<br>코드 블록 전용 mono</div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:14px 0 10px">컬러 팔레트</div>
+  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:#1E3A8A;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Cobalt #1E3A8A</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary)">TypeMIN 메인 · Dev · 네비 · 버튼</div>
+      </div>
+      <div style="display:flex;gap:3px">
+        <div style="width:16px;height:16px;border-radius:3px;background:#4A6ABE" title="light"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#0C1030" title="dim"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:#D4A020;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Gold #D4A020</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary)">Photo 서브 브랜드 · Hero em 컬러</div>
+      </div>
+      <div style="display:flex;gap:3px">
+        <div style="width:16px;height:16px;border-radius:3px;background:#EAB840" title="light"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#1C1400" title="dim"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:#C03030;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Crimson #C03030</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary)">Music 서브 브랜드</div>
+      </div>
+      <div style="display:flex;gap:3px">
+        <div style="width:16px;height:16px;border-radius:3px;background:#E05050" title="light"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#1A0808" title="dim"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:#30A888;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Teal #30A888</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary)">Writing 서브 브랜드</div>
+      </div>
+      <div style="display:flex;gap:3px">
+        <div style="width:16px;height:16px;border-radius:3px;background:#50C8A8" title="light"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#081410" title="dim"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:#08090F;border:0.5px solid rgba(255,255,255,0.1);flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Dark bg 4레이어</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary)">#08090F · #0E1020 · #161830 · #1E2040</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:10px">파일 구조 (목표)</div>
+  <div class="file-tree">
+<span class="ft-dir">typemin.github.io/</span>
+├── <span class="ft-dir">.github/workflows/</span>
+│   └── <span class="ft-file">deploy.yml</span>         <span class="ft-cm">← GitHub Actions</span>
+├── <span class="ft-dir">public/</span>
+│   └── <span class="ft-file">favicon.svg</span>
+├── <span class="ft-dir">src/</span>
+│   ├── <span class="ft-dir">components/</span>
+│   │   ├── <span class="ft-file">Hero.astro</span>       <span class="ft-cm">← 타이핑 애니메이션</span>
+│   │   ├── <span class="ft-file">PostCard.astro</span>
+│   │   └── <span class="ft-file">WorkCard.astro</span>
+│   ├── <span class="ft-dir">content/posts/</span>      <span class="ft-cm">← Markdown 글들</span>
+│   ├── <span class="ft-dir">layouts/</span>
+│   │   ├── <span class="ft-file">BaseLayout.astro</span> <span class="ft-cm">← CSS 변수 포함 ✅ 완료</span>
+│   │   └── <span class="ft-file">PostLayout.astro</span>
+│   ├── <span class="ft-dir">pages/</span>
+│   │   ├── <span class="ft-file">index.astro</span>      <span class="ft-cm">← 홈</span>
+│   │   ├── <span class="ft-dir">posts/</span>
+│   │   │   ├── <span class="ft-file">index.astro</span>
+│   │   │   └── <span class="ft-file">[slug].astro</span>
+│   │   ├── <span class="ft-dir">works/</span>
+│   │   │   └── <span class="ft-file">index.astro</span>
+│   │   └── <span class="ft-file">about.astro</span>
+│   └── <span class="ft-file">content.config.ts</span>
+├── <span class="ft-file">astro.config.mjs</span>
+├── <span class="ft-file">package.json</span>
+└── <span class="ft-file">tsconfig.json</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    <div style="text-align:center;padding:10px;border-radius:8px;background:var(--color-background-secondary)">
+      <div style="font-size:20px;font-weight:500;color:#4A6ABE">3</div>
+      <div style="font-size:10px;color:var(--color-text-tertiary)">Phase</div>
+    </div>
+    <div style="text-align:center;padding:10px;border-radius:8px;background:var(--color-background-secondary)">
+      <div style="font-size:20px;font-weight:500;color:#EAB840">16</div>
+      <div style="font-size:10px;color:var(--color-text-tertiary)">파일</div>
+    </div>
+    <div style="text-align:center;padding:10px;border-radius:8px;background:var(--color-background-secondary)">
+      <div style="font-size:20px;font-weight:500;color:#E05050">1</div>
+      <div style="font-size:10px;color:var(--color-text-tertiary)">완료</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Phase 1 ── -->
+<div class="panel" id="panel-phase1">
+  <div class="info-box">
+    <strong>목표:</strong> 로컬에서 실행되고 GitHub에 배포까지 완료된 상태. 디자인 없어도 됨, 일단 뜨는 게 목표.
+  </div>
+
+  <div class="phase" id="ph1-1">
+    <div class="phase-header" onclick="tog('ph1-1')">
+      <div class="phase-num" style="background:#0C1030;color:#4A6ABE">1</div>
+      <div class="phase-title">GitHub 저장소 + 로컬 환경 세팅</div>
+      <div class="phase-badge" style="background:#0C1030;color:#4A6ABE">30분</div>
+    </div>
+    <div class="phase-body" id="ph1-1-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-brand-github" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">GitHub 저장소 생성</div>
+            <div class="task-desc">github.com → New repository → 이름: <code>typemin.github.io</code><br>Settings → Pages → Source: <strong>GitHub Actions</strong> 선택</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-terminal" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">Astro 프로젝트 생성</div>
+            <div class="task-desc">
+              <pre>npm create astro@latest typemin.github.io
+# 템플릿: blog
+# TypeScript: Yes (strict)
+# git init: Yes
+cd typemin.github.io
+npm install</pre>
+            </div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-git-commit" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">원격 저장소 연결 + 첫 push</div>
+            <div class="task-desc">
+              <pre>git remote add origin https://github.com/TypeMIN/typemin.github.io.git
+git add .
+git commit -m "feat: init Astro project"
+git push -u origin main</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph1-2">
+    <div class="phase-header" onclick="tog('ph1-2')">
+      <div class="phase-num" style="background:#0C1030;color:#4A6ABE">2</div>
+      <div class="phase-title">GitHub Actions 배포 설정</div>
+      <div class="phase-badge" style="background:#0C1030;color:#4A6ABE">10분</div>
+    </div>
+    <div class="phase-body" id="ph1-2-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-file" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">.github/workflows/deploy.yml 생성</div>
+            <div class="task-desc">
+              <pre>name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: withastro/action@v3</pre>
+            </div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-settings" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">astro.config.mjs 설정</div>
+            <div class="task-desc">
+              <pre>import { defineConfig } from 'astro/config';
+export default defineConfig({
+  site: 'https://typemin.github.io',
+});</pre>
+            </div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-check" style="color:#30A888"></i></div>
+          <div class="task-body">
+            <div class="task-title">배포 확인</div>
+            <div class="task-desc">push 후 2~3분 → GitHub Actions 탭 확인 → <code>https://typemin.github.io</code> 접속</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph1-3">
+    <div class="phase-header" onclick="tog('ph1-3')">
+      <div class="phase-num" style="background:#0C1030;color:#4A6ABE">3</div>
+      <div class="phase-title">BaseLayout + 디자인 시스템 적용</div>
+      <div class="phase-badge" style="background:#1C1400;color:#EAB840">완료된 파일 있음</div>
+    </div>
+    <div class="phase-body" id="ph1-3-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-check" style="color:#30A888"></i></div>
+          <div class="task-body">
+            <div class="task-title">BaseLayout.astro 교체 ✅</div>
+            <div class="task-desc">다운로드한 BaseLayout.astro를 <code>src/layouts/</code>에 붙여넣기. CSS 변수 인라인 포함되어 있음.</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-file" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">content.config.ts 생성</div>
+            <div class="task-desc">Astro 5 Content Collections 스키마. category enum: dev/photo/music/writing/essay</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-device-desktop" style="color:#4A6ABE"></i></div>
+          <div class="task-body">
+            <div class="task-title">로컬 확인</div>
+            <div class="task-desc"><code>npm run dev</code> → 네비, 다크모드 토글, 푸터 동작 확인</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="action-btn" onclick="sendPrompt('Phase 1 세팅이 완료됐어. GitHub에 배포도 됐어. 이제 Claude Code에서 Phase 2를 시작할게. 다음 파일들을 순서대로 만들어줘:\n\n1. src/content.config.ts — Astro 5 Content Collections, category: dev/photo/music/writing/essay enum\n2. src/layouts/PostLayout.astro — 블로그 글 레이아웃, BaseLayout 상속, prose 스타일\n3. src/components/Hero.astro — 타이핑 애니메이션(개발공부중/사진찍는중/음악만드는중/기록중), 헤드라인 "만들고, 기록하고, 탐색합니다", em 컬러 Gold(#EAB840), Cobalt 버튼\n4. src/components/PostCard.astro — category별 컬러 배지, hover border\n5. src/components/WorkCard.astro — Works 카드\n\n디자인 시스템: BaseLayout.astro에 인라인된 CSS 변수 그대로 사용. Cobalt #1E3A8A, Gold #D4A020, Crimson #C03030, Teal #30A888.')">Phase 1 완료 → Phase 2 시작 ↗</button>
+</div>
+
+<!-- ── Phase 2 ── -->
+<div class="panel" id="panel-phase2">
+  <div class="info-box">
+    <strong>목표:</strong> 모든 페이지가 완성되고 샘플 콘텐츠가 들어간 상태. 실제로 쓸 수 있는 사이트.
+  </div>
+
+  <div class="phase" id="ph2-1">
+    <div class="phase-header" onclick="tog('ph2-1')">
+      <div class="phase-num" style="background:#1C1400;color:#EAB840">1</div>
+      <div class="phase-title">페이지 전체 완성</div>
+      <div class="phase-badge" style="background:#1C1400;color:#EAB840">핵심</div>
+    </div>
+    <div class="phase-body" id="ph2-1-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-home" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">홈 (index.astro)</div>
+            <div class="task-desc">Hero + 최근 글 4개 그리드 + 서브 브랜드 4개 카드(Dev/Photo/Music/Writing)</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-pencil" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">글 목록 (posts/index.astro)</div>
+            <div class="task-desc">카테고리 필터(전체/dev/photo/music/writing/essay) + 글 목록 + empty state</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-file-text" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">글 상세 (posts/[slug].astro)</div>
+            <div class="task-desc">동적 라우팅, getStaticPaths, Content Collections render()</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-layout-grid" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">Works (works/index.astro)</div>
+            <div class="task-desc">Dev/Photo/Music 섹션 분리, 카드 그리드, placeholder</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-user" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">About (about.astro)</div>
+            <div class="task-desc">TM 아바타 + 소개문 + 스킬 + 관심사 4개 카드 + GitHub/Email 링크</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph2-2">
+    <div class="phase-header" onclick="tog('ph2-2')">
+      <div class="phase-num" style="background:#1C1400;color:#EAB840">2</div>
+      <div class="phase-title">첫 콘텐츠 작성</div>
+      <div class="phase-badge" style="background:#1C1400;color:#EAB840">직접 작성</div>
+    </div>
+    <div class="phase-body" id="ph2-2-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-markdown" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">첫 글 작성</div>
+            <div class="task-desc"><code>src/content/posts/</code>에 Markdown 파일 추가. frontmatter 필수: title, description, pubDate, category</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-brand-github" style="color:#EAB840"></i></div>
+          <div class="task-body">
+            <div class="task-title">GitHub 링크 업데이트</div>
+            <div class="task-desc">About, 푸터의 GitHub 링크 실제 주소로 교체</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="action-btn" onclick="sendPrompt('Phase 2 페이지 작업을 시작할게. Claude Code에서 아래 파일들을 순서대로 만들어줘. BaseLayout.astro의 CSS 변수(Cobalt #1E3A8A, Gold #D4A020, Crimson #C03030, Teal #30A888, 다크 배경 4레이어)를 그대로 활용해.\n\n1. src/pages/index.astro — Hero 컴포넌트 임포트, getCollection으로 최근 글 4개, 서브 브랜드 카드 4개(각 hover 시 해당 브랜드 컬러 border)\n2. src/pages/posts/index.astro — getCollection, 카테고리 필터 버튼(JS), PostCard 목록, empty state\n3. src/pages/posts/[slug].astro — getStaticPaths + render(), PostLayout 사용\n4. src/pages/works/index.astro — Dev/Photo/Music 섹션, WorkCard 사용, placeholder\n5. src/pages/about.astro — TM 아바타(cobalt-dim bg + cobalt-light border), 소개, 스킬 그룹(프론트엔드/도구/학습중), 관심사 4개 카드')">Phase 2 페이지 작업 시작 ↗</button>
+</div>
+
+<!-- ── Phase 3 ── -->
+<div class="panel" id="panel-phase3">
+  <div class="info-box">
+    <strong>목표:</strong> 디테일 완성 + SEO + 성능 최적화. 공개해도 부끄럽지 않은 상태.
+  </div>
+
+  <div class="phase" id="ph3-1">
+    <div class="phase-header" onclick="tog('ph3-1')">
+      <div class="phase-num" style="background:#1A0808;color:#E05050">1</div>
+      <div class="phase-title">디테일 & UX 개선</div>
+      <div class="phase-badge" style="background:#1A0808;color:#E05050">퀄리티</div>
+    </div>
+    <div class="phase-body" id="ph3-1-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-moon" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">FOUC 방지 스크립트</div>
+            <div class="task-desc">&lt;head&gt;에 인라인 스크립트로 테마 초기화. 페이지 로드 시 흰 화면 깜빡임 제거.</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-arrow-up" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">404 페이지</div>
+            <div class="task-desc"><code>src/pages/404.astro</code> — BaseLayout 사용, 홈으로 돌아가기 버튼</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-photo" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">OG 이미지 설정</div>
+            <div class="task-desc">각 페이지 og:image 메타태그, og:url 추가</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-code" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">코드 하이라이팅</div>
+            <div class="task-desc">Astro 내장 Shiki 설정. 다크테마: <code>github-dark-dimmed</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph3-2">
+    <div class="phase-header" onclick="tog('ph3-2')">
+      <div class="phase-num" style="background:#1A0808;color:#E05050">2</div>
+      <div class="phase-title">SEO + 성능</div>
+      <div class="phase-badge" style="background:#1A0808;color:#E05050">선택</div>
+    </div>
+    <div class="phase-body" id="ph3-2-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-map" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">sitemap.xml</div>
+            <div class="task-desc"><code>@astrojs/sitemap</code> 인테그레이션 추가</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-rss" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">RSS 피드</div>
+            <div class="task-desc"><code>@astrojs/rss</code> → <code>src/pages/rss.xml.ts</code></div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-search" style="color:#E05050"></i></div>
+          <div class="task-body">
+            <div class="task-title">검색 기능 (선택)</div>
+            <div class="task-desc">Pagefind 또는 Fuse.js로 클라이언트 사이드 검색</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase" id="ph3-3">
+    <div class="phase-header" onclick="tog('ph3-3')">
+      <div class="phase-num" style="background:#081410;color:#50C8A8">3</div>
+      <div class="phase-title">운영 루틴</div>
+      <div class="phase-badge" style="background:#081410;color:#50C8A8">계속</div>
+    </div>
+    <div class="phase-body" id="ph3-3-body">
+      <div class="task-list">
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-pencil" style="color:#50C8A8"></i></div>
+          <div class="task-body">
+            <div class="task-title">글 꾸준히 추가</div>
+            <div class="task-desc"><code>src/content/posts/</code>에 .md 파일 추가 → push → 자동 배포</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-layout-grid" style="color:#50C8A8"></i></div>
+          <div class="task-body">
+            <div class="task-title">Works 카드 추가</div>
+            <div class="task-desc">프로젝트 생길 때마다 works/index.astro에 WorkCard 추가</div>
+          </div>
+        </div>
+        <div class="task">
+          <div class="task-icon"><i class="ti ti-brand-github" style="color:#50C8A8"></i></div>
+          <div class="task-body">
+            <div class="task-title">서브 브랜드 분리 (나중에)</div>
+            <div class="task-desc">분야가 커지면 별도 저장소로 분리. Hybrid 구조라 페이지 파일 그대로 옮기면 됨.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="action-btn" onclick="sendPrompt('Phase 3 디테일 작업을 시작할게. 아래를 순서대로 해줘:\n1. src/pages/404.astro — BaseLayout 사용, 간단한 404 메시지, 홈으로 돌아가기 버튼(btn--primary)\n2. BaseLayout.astro head 안에 FOUC 방지 인라인 스크립트 추가 — localStorage 확인 후 즉시 data-theme 설정\n3. astro.config.mjs에 Shiki 코드 하이라이팅 설정 추가 — theme: github-dark-dimmed\n4. package.json에 @astrojs/sitemap 추가하고 astro.config.mjs에 인테그레이션 설정')">Phase 3 디테일 작업 시작 ↗</button>
+</div>
+
+<!-- ── Claude Code 프롬프트 ── -->
+<div class="panel" id="panel-prompts">
+  <div class="info-box">상황에 맞는 프롬프트를 골라서 Claude Code에 붙여넣으세요.</div>
+
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <div class="prompt-title">처음 시작 — 전체 파일 한번에</div>
+      <button class="prompt-copy-btn" onclick="copyPrompt('p0')">복사</button>
+    </div>
+    <div class="prompt-body" id="p0">TypeMIN 개인 브랜드 사이트를 Astro 5로 만들거야. 전체 파일 구조를 처음부터 만들어줘.
+
+디자인 시스템:
+- Cobalt #1E3A8A(light #4A6ABE) — TypeMIN 메인, Dev
+- Gold #D4A020(light #EAB840) — Photo
+- Crimson #C03030(light #E05050) — Music  
+- Teal #30A888(light #50C8A8) — Writing
+- 다크 bg: #08090F / #0E1020 / #161830 / #1E2040
+- 폰트: Pretendard(CDN) + JetBrains Mono
+- 다크모드 기본, [data-theme] 토글, localStorage
+
+만들 파일: astro.config.mjs, content.config.ts, BaseLayout.astro(CSS 변수 인라인), PostLayout.astro, Hero.astro(타이핑), PostCard.astro, WorkCard.astro, index.astro, posts/index.astro, posts/[slug].astro, works/index.astro, about.astro, deploy.yml, favicon.svg</div>
+  </div>
+
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <div class="prompt-title">특정 파일만 — Hero 컴포넌트</div>
+      <button class="prompt-copy-btn" onclick="copyPrompt('p1')">복사</button>
+    </div>
+    <div class="prompt-body" id="p1">src/components/Hero.astro를 만들어줘.
+
+- 헤드라인: "만들고, 기록하고," 다음 줄에 em 태그로 "탐색합니다." (color: var(--gold-light) #EAB840)
+- 타이핑 애니메이션: ["개발을 공부하고 있어요.", "사진을 찍으러 다닙니다.", "음악을 만들고 있어요.", "기록하는 걸 좋아해요."] 순환
+- 커서: 2px width, cobalt-light 컬러, blink 애니메이션
+- 버튼: "글 보기"(btn--primary Cobalt), "Works ↗"(btn--ghost), "GitHub ↗"(btn--ghost 외부링크)
+- 전체 section에 fade-in 클래스
+- CSS 변수는 BaseLayout에서 상속받으므로 별도 선언 불필요</div>
+  </div>
+
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <div class="prompt-title">오류 수정 요청</div>
+      <button class="prompt-copy-btn" onclick="copyPrompt('p2')">복사</button>
+    </div>
+    <div class="prompt-body" id="p2">아래 오류가 발생했어. 수정해줘.
+
+[오류 메시지 붙여넣기]
+
+관련 파일: [파일 경로]
+
+TypeMIN 프로젝트 스택: Astro 5, TypeScript strict, Content Collections, CSS 변수 기반 디자인 시스템</div>
+  </div>
+
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <div class="prompt-title">새 글 frontmatter 템플릿</div>
+      <button class="prompt-copy-btn" onclick="copyPrompt('p3')">복사</button>
+    </div>
+    <div class="prompt-body" id="p3">---
+title: "글 제목"
+description: "글 설명 (SEO + 카드에 표시됨)"
+pubDate: 2025-01-12
+category: dev  # dev | photo | music | writing | essay
+tags: [태그1, 태그2]
+draft: false
+---
+
+본문 내용...</div>
+  </div>
+
+  <button class="ghost-btn" onclick="sendPrompt('Claude Code에서 막히는 부분이 있어. 현재 상황을 알려줄게.')">막히는 부분 있으면 질문하기 ↗</button>
+</div>
+
+</div>
+
+<script>
+function st(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('panel-'+id).classList.add('on');
+  el.classList.add('on');
+}
+
+function tog(id){
+  var body=document.getElementById(id+'-body');
+  if(!body)return;
+  body.classList.toggle('open');
+}
+
+function copyPrompt(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var text=el.textContent||'';
+  navigator.clipboard.writeText(text.trim()).then(function(){
+    var btns=document.querySelectorAll('.prompt-copy-btn');
+    btns.forEach(function(b){
+      if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(id)){
+        b.textContent='복사됨 ✓';
+        setTimeout(function(){b.textContent='복사';},1500);
+      }
+    });
+  });
+}
+</script>

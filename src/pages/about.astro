@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const skills = {
+  '프론트엔드': ['HTML/CSS', 'JavaScript', 'TypeScript', 'Astro', 'React'],
+  '도구': ['Git', 'GitHub Actions', 'VS Code'],
+  '학습 중': ['Node.js', 'Three.js'],
+};
+
+const interests = [
+  { key: 'dev',     label: 'Dev',     emoji: '💻', desc: '웹 개발 공부, 사이드 프로젝트' },
+  { key: 'photo',   label: 'Photo',   emoji: '📷', desc: '필름 사진, 여행, 일상 기록' },
+  { key: 'music',   label: 'Music',   emoji: '🎵', desc: 'DAW로 만드는 음악, 작곡' },
+  { key: 'writing', label: 'Writing', emoji: '✍️',  desc: '에세이, 독서 노트, 생각 정리' },
+];
+---
+
+<BaseLayout title="About — TypeMIN" description="TypeMIN에 대해">
+  <div class="container" style="padding-top: 2.5rem; padding-bottom: 3rem;">
+
+    <div class="about-hero fade-in">
+      <div class="avatar">TM</div>
+      <div>
+        <h1 class="about-name">TypeMIN</h1>
+        <p class="about-tagline">만들고, 기록하고, 탐색합니다.</p>
+      </div>
+    </div>
+
+    <div class="about-bio">
+      <p>개발, 사진, 음악, 글쓰기를 좋아합니다. 배운 것들을 기록하고, 만들고 싶은 것들을 만들며, 새로운 것들을 탐색하는 걸 즐깁니다.</p>
+      <p>이 사이트는 그 모든 과정의 기록 공간이에요.</p>
+    </div>
+
+    <section class="about-section">
+      <p class="section-label">관심 분야</p>
+      <div class="interest-grid">
+        {interests.map(item => (
+          <div class={`interest-card interest-card--${item.key}`}>
+            <span class="interest-emoji">{item.emoji}</span>
+            <div>
+              <div class={`badge badge--${item.key}`} style="margin-bottom: 0.35rem;">{item.label}</div>
+              <p class="interest-desc">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="about-section">
+      <p class="section-label">스킬</p>
+      <div class="skill-groups">
+        {Object.entries(skills).map(([group, items]) => (
+          <div class="skill-group">
+            <p class="skill-group__label">{group}</p>
+            <div class="skill-tags">
+              {items.map(s => <span class="skill-tag">{s}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="about-section">
+      <p class="section-label">연결</p>
+      <div class="contact-links">
+        <a href="https://github.com/TypeMIN" target="_blank" rel="noopener" class="btn btn--ghost">GitHub ↗</a>
+        <a href="mailto:typemin99@gmail.com" class="btn btn--ghost">이메일 ↗</a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .about-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--cobalt-dim);
+    border: 2px solid var(--cobalt-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cobalt-light);
+    flex-shrink: 0;
+  }
+
+  .about-name { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .about-tagline { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.2rem; }
+
+  .about-bio { margin-bottom: 2.5rem; }
+  .about-bio p { color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.7; }
+
+  .about-section { margin-bottom: 2rem; }
+
+  .interest-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px) { .interest-grid { grid-template-columns: 1fr; } }
+
+  .interest-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 0.5px solid var(--border);
+    background: var(--bg-1);
+    transition: border-color 0.15s;
+  }
+  .interest-card--dev:hover     { border-color: var(--cobalt-light); }
+  .interest-card--photo:hover   { border-color: var(--gold-light); }
+  .interest-card--music:hover   { border-color: var(--crimson-light); }
+  .interest-card--writing:hover { border-color: var(--teal-light); }
+
+  .interest-emoji { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .interest-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+
+  .skill-groups { display: flex; flex-direction: column; gap: 0.75rem; }
+  .skill-group__label { font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.4rem; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .skill-tag {
+    font-size: 0.75rem; padding: 3px 10px; border-radius: 99px;
+    background: var(--bg-2); color: var(--text-secondary);
+    border: 0.5px solid var(--border);
+  }
+
+  .contact-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+</style>

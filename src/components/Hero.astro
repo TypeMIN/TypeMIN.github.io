@@ -1,0 +1,114 @@
+---
+---
+
+<section class="hero fade-in">
+  <div class="hero__tag">TypeMIN</div>
+  <h1 class="hero__headline">
+    만들고, 기록하고,<br />
+    <em class="hero__em">탐색합니다.</em>
+  </h1>
+  <p class="hero__typing">
+    <span id="typing-text"></span><span class="cursor">|</span>
+  </p>
+  <div class="hero__actions">
+    <a href="/posts" class="btn btn--primary">글 보기</a>
+    <a href="/works" class="btn btn--ghost">Works ↗</a>
+    <a href="https://github.com/TypeMIN" target="_blank" rel="noopener" class="btn btn--ghost">GitHub ↗</a>
+  </div>
+</section>
+
+<script is:inline>
+  var phrases = [
+    '개발을 공부하고 있어요.',
+    '사진을 찍으러 다닙니다.',
+    '음악을 만들고 있어요.',
+    '기록하는 걸 좋아해요.',
+  ];
+  var el = document.getElementById('typing-text');
+  var i = 0, ci = 0, deleting = false;
+
+  function tick() {
+    var phrase = phrases[i];
+    if (!deleting) {
+      ci++;
+      el.textContent = phrase.slice(0, ci);
+      if (ci === phrase.length) {
+        deleting = true;
+        setTimeout(tick, 1800);
+        return;
+      }
+      setTimeout(tick, 75);
+    } else {
+      ci--;
+      el.textContent = phrase.slice(0, ci);
+      if (ci === 0) {
+        deleting = false;
+        i = (i + 1) % phrases.length;
+        setTimeout(tick, 400);
+        return;
+      }
+      setTimeout(tick, 38);
+    }
+  }
+  setTimeout(tick, 600);
+</script>
+
+<style>
+  .hero {
+    padding: 5rem 0 4rem;
+    text-align: center;
+  }
+
+  .hero__tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cobalt-light);
+    background: var(--cobalt-dim);
+    border: 0.5px solid var(--cobalt-light);
+    border-radius: 99px;
+    padding: 3px 12px;
+    margin-bottom: 1.25rem;
+    opacity: 0.85;
+  }
+
+  .hero__headline {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero__em {
+    color: var(--gold-light);
+    font-style: normal;
+  }
+
+  .hero__typing {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: var(--text-secondary);
+    min-height: 1.8rem;
+    margin-bottom: 2rem;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    color: var(--cobalt-light);
+    animation: blink 1s step-end infinite;
+    font-weight: 300;
+    margin-left: 1px;
+  }
+
+  .hero__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+</style>

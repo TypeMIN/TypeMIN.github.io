@@ -1,0 +1,88 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import PostCard from '../components/PostCard.astro';
+
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const recentPosts = allPosts
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 4);
+
+const subBrands = [
+  { key: 'dev',     label: 'Dev',     desc: '개발 공부, 코드, 프로젝트',   href: '/posts?cat=dev',     color: 'cobalt' },
+  { key: 'photo',   label: 'Photo',   desc: '카메라를 들고 담은 순간들',    href: '/posts?cat=photo',   color: 'gold'   },
+  { key: 'music',   label: 'Music',   desc: '만들고 듣는 음악 이야기',      href: '/posts?cat=music',   color: 'crimson'},
+  { key: 'writing', label: 'Writing', desc: '생각, 에세이, 독서 기록',      href: '/posts?cat=writing', color: 'teal'   },
+];
+---
+
+<BaseLayout title="TypeMIN — 만들고, 기록하고, 탐색합니다.">
+  <div class="container">
+    <Hero />
+
+    {recentPosts.length > 0 && (
+      <section class="section">
+        <div class="section__header">
+          <p class="section-label">최근 글</p>
+          <a href="/posts" class="section__more">전체 보기 →</a>
+        </div>
+        <div class="post-grid">
+          {recentPosts.map(post => (
+            <PostCard
+              slug={post.id}
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              category={post.data.category}
+            />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="section">
+      <p class="section-label">탐색 중인 분야</p>
+      <div class="brand-grid">
+        {subBrands.map(b => (
+          <a href={b.href} class={`brand-card brand-card--${b.color}`}>
+            <div class={`brand-card__label badge badge--${b.key}`}>{b.label}</div>
+            <p class="brand-card__desc">{b.desc}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .section { margin-bottom: 3.5rem; }
+  .section__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .section__more { font-size: 0.8rem; color: var(--cobalt-light); }
+
+  .post-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+  .brand-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+
+  @media (max-width: 480px) { .brand-grid { grid-template-columns: 1fr; } }
+
+  .brand-card {
+    padding: 1.1rem 1.25rem;
+    border-radius: 10px;
+    border: 0.5px solid var(--border);
+    background: var(--bg-1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .brand-card:hover { background: var(--bg-2); text-decoration: none; }
+  .brand-card--cobalt:hover  { border-color: var(--cobalt-light); }
+  .brand-card--gold:hover    { border-color: var(--gold-light); }
+  .brand-card--crimson:hover { border-color: var(--crimson-light); }
+  .brand-card--teal:hover    { border-color: var(--teal-light); }
+
+  .brand-card__label { align-self: flex-start; }
+  .brand-card__desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+</style>
