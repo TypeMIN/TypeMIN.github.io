@@ -7,6 +7,8 @@ interface Props {
 
 const { title, description = 'TypeMIN — 만들고, 기록하고, 탐색합니다.', ogImage } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const resolvedOgImage = ogImage ?? new URL('/og-default.svg', Astro.site).toString();
+const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -19,7 +21,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:type" content="website" />
-    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta property="og:image" content={resolvedOgImage} />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href={canonicalURL} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -249,9 +251,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <div class="container nav__inner">
         <a href="/" class="nav__logo">Type<span>MIN</span></a>
         <div class="nav__links">
-          <a href="/posts" class="nav__link">글</a>
-          <a href="/works" class="nav__link">Works</a>
-          <a href="/about" class="nav__link">About</a>
+          <a href="/posts" class={`nav__link${currentPath.startsWith('/posts') ? ' active' : ''}`}>글</a>
+          <a href="/works" class={`nav__link${currentPath.startsWith('/works') ? ' active' : ''}`}>Works</a>
+          <a href="/about" class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>About</a>
           <button class="nav__toggle" id="theme-toggle" aria-label="테마 전환">🌙</button>
         </div>
       </div>
