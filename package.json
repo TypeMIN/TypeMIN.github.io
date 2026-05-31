@@ -2,10 +2,7 @@
   "name": "typemin-github-io",
   "type": "module",
   "version": "0.0.1",
-  "engines": {
-    "node": ">=22.12.0"
-  },
-  "scripts": {
+"scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
