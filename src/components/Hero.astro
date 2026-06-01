@@ -8,7 +8,7 @@
     <em class="hero__em">탐색합니다.</em>
   </h1>
   <p class="hero__typing">
-    <span id="typing-text"></span><span class="cursor">|</span>
+    <span id="typing-text"></span><span class="cursor" aria-hidden="true"></span>
   </p>
   <div class="hero__actions">
     <a href="/posts" class="btn btn--primary">글 보기</a>
@@ -55,7 +55,7 @@
 
 <style>
   .hero {
-    padding: 5rem 0 4rem;
+    padding: clamp(3rem, 8vw, 5rem) 0 4rem;
     text-align: center;
   }
 
@@ -93,15 +93,21 @@
     color: var(--text-secondary);
     min-height: 1.8rem;
     margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
   }
 
   .cursor {
     display: inline-block;
     width: 2px;
-    color: var(--cobalt-light);
+    height: 1.1em;
+    background: var(--cobalt-light);
+    border-radius: 1px;
     animation: blink 1s step-end infinite;
-    font-weight: 300;
-    margin-left: 1px;
+    vertical-align: middle;
+    flex-shrink: 0;
   }
 
   .hero__actions {

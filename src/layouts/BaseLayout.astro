@@ -147,7 +147,7 @@ const currentPath = Astro.url.pathname;
       .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.25rem; border-radius: 7px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.15s, background 0.15s; white-space: nowrap; }
       .btn:hover { text-decoration: none; opacity: 0.85; }
       .btn--primary { background: var(--cobalt); color: #EEF0FA; }
-      .btn--ghost { background: transparent; color: var(--text-secondary); border: 0.5px solid var(--border); }
+      .btn--ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
       .btn--ghost:hover { background: var(--bg-1); opacity: 1; }
 
       .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; letter-spacing: 0.05em; }
@@ -199,6 +199,7 @@ const currentPath = Astro.url.pathname;
         font-size: 0.8rem;
         font-family: var(--font-sans);
         transition: background 0.15s;
+        flex-shrink: 0;
       }
       .nav__toggle:hover { background: var(--bg-2); }
 
@@ -242,7 +243,8 @@ const currentPath = Astro.url.pathname;
 
       /* ── 반응형 ── */
       @media (max-width: 640px) {
-        .nav__links .nav__link:not(.nav__link--mobile) { display: none; }
+        .nav__links { gap: 1rem; }
+        .nav__link { font-size: 0.8rem; }
       }
     </style>
   </head>
@@ -265,7 +267,7 @@ const currentPath = Astro.url.pathname;
 
     <footer class="footer">
       <div class="container footer__inner">
-        <span>© 2025 TypeMIN</span>
+        <span>© {new Date().getFullYear()} TypeMIN</span>
         <div class="footer__links">
           <a href="https://github.com/TypeMIN" target="_blank" rel="noopener">GitHub</a>
           <a href="/rss.xml">RSS</a>
