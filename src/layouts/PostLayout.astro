@@ -1,10 +1,11 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 
-type Props = CollectionEntry<'posts'>['data'];
+type Props = CollectionEntry<'posts'>['data'] & { headings?: MarkdownHeading[] };
 
-const { title, description, pubDate, updatedDate, category } = Astro.props;
+const { title, description, pubDate, updatedDate, category, headings = [] } = Astro.props;
 
 const dateStr = pubDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 const updatedStr = updatedDate?.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -12,35 +13,177 @@ const updatedStr = updatedDate?.toLocaleDateString('ko-KR', { year: 'numeric', m
 const categoryLabel: Record<string, string> = {
   dev: 'Dev', photo: 'Photo', music: 'Music', writing: 'Writing', essay: 'Essay',
 };
+
+const tocHeadings = headings.filter(h => h.depth <= 3);
+const hasToc = tocHeadings.length >= 2;
 ---
 
 <BaseLayout title={`${title} — TypeMIN`} description={description} ogImage="/og-default.svg">
-  <article class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
-    <header class="post-header">
-      <span class={`badge badge--${category}`}>{categoryLabel[category]}</span>
-      <h1 class="post-title">{title}</h1>
-      <p class="post-desc">{description}</p>
-      <div class="post-meta">
-        <time datetime={pubDate.toISOString()}>{dateStr}</time>
-        {updatedDate && <span class="updated-on">· {updatedStr} 수정</span>}
+  <div class={`post-page ${hasToc ? 'has-toc' : ''}`}>
+    <article class="post-content">
+      <header class="post-header">
+        <span class={`badge badge--${category}`}>{categoryLabel[category]}</span>
+        <h1 class="post-title">{title}</h1>
+        <p class="post-desc">{description}</p>
+        <div class="post-meta">
+          <time datetime={pubDate.toISOString()}>{dateStr}</time>
+          {updatedDate && <span class="updated-on">· {updatedStr} 수정</span>}
+        </div>
+      </header>
+      <hr class="post-divider" />
+      <div class="prose">
+        <slot />
       </div>
-    </header>
-    <hr class="post-divider" />
-    <div class="prose">
-      <slot />
-    </div>
-    <div class="post-back">
-      <a href="/posts" class="btn btn--ghost">← 글 목록</a>
-    </div>
-  </article>
+      <div class="post-back">
+        <a href="/posts" class="btn btn--ghost">← 글 목록</a>
+      </div>
+    </article>
+
+    {hasToc && (
+      <aside class="toc" id="toc">
+        <p class="toc__label">목차</p>
+        <nav>
+          {tocHeadings.map(h => (
+            <a
+              href={`#${h.slug}`}
+              class={`toc__link toc__link--${h.depth}`}
+              data-heading={h.slug}
+            >
+              {h.text}
+            </a>
+          ))}
+        </nav>
+      </aside>
+    )}
+  </div>
 </BaseLayout>
 
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc__link');
+  if (links.length > 0) {
+    const headingEls = Array.from(links).map(l =>
+      document.getElementById(l.dataset.heading ?? '')
+    ).filter(Boolean) as HTMLElement[];
+
+    const setActive = (id: string) => {
+      links.forEach(l => l.classList.toggle('active', l.dataset.heading === id));
+    };
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length > 0) {
+          setActive(visible[0].target.id);
+        }
+      },
+      { rootMargin: '-64px 0px -60% 0px', threshold: 0 }
+    );
+
+    headingEls.forEach(el => observer.observe(el));
+
+    // 클릭 시 부드럽게 스크롤
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.getElementById(link.dataset.heading ?? '');
+        if (target) {
+          const top = target.getBoundingClientRect().top + window.scrollY - 72;
+          window.scrollTo({ top, behavior: 'smooth' });
+          setActive(link.dataset.heading ?? '');
+        }
+      });
+    });
+  }
+</script>
+
 <style>
+  /* ── 레이아웃 ── */
+  .post-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .post-page.has-toc {
+    max-width: 1100px;
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 3.5rem;
+    align-items: start;
+  }
+
+  /* grid blowout 방지 */
+  .post-content {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* ── 본문 ── */
   .post-header { margin-bottom: 1.5rem; }
-  .post-title { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; line-height: 1.2; margin: 0.75rem 0 0.5rem; color: var(--text-primary); }
+  .post-title {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0.75rem 0 0.5rem;
+    color: var(--text-primary);
+  }
   .post-desc { font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
   .post-meta { font-size: 0.8rem; color: var(--text-tertiary); }
   .updated-on { color: var(--text-tertiary); }
   .post-divider { border: none; border-top: 0.5px solid var(--border); margin: 1.5rem 0 2rem; }
   .post-back { margin-top: 3rem; padding-top: 2rem; border-top: 0.5px solid var(--border); }
+
+  /* ── TOC 사이드바 ── */
+  .toc {
+    position: sticky;
+    top: 72px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding: 1rem 0;
+    scrollbar-width: none;
+  }
+  .toc::-webkit-scrollbar { display: none; }
+
+  .toc__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
+  }
+
+  .toc__link {
+    display: block;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    padding: 0.25rem 0 0.25rem 0.75rem;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+    word-break: keep-all;
+  }
+  .toc__link--3 {
+    padding-left: 1.35rem;
+    font-size: 0.75rem;
+  }
+  .toc__link:hover { color: var(--text-secondary); text-decoration: none; }
+  .toc__link.active {
+    color: var(--cobalt-light);
+    border-left-color: var(--cobalt-light);
+    font-weight: 500;
+  }
+
+  /* ── 모바일: TOC 숨김 ── */
+  @media (max-width: 900px) {
+    .post-page.has-toc {
+      grid-template-columns: 1fr;
+      max-width: 760px;
+    }
+    .toc { display: none; }
+  }
 </style>
