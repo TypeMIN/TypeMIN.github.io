@@ -4,9 +4,10 @@ interface Props {
   description?: string;
   ogImage?: string;
   brandClass?: string;
+  navMode?: 'main' | 'subbrand';
 }
 
-const { title, description = 'TypeMIN — 만들고, 기록하고, 탐색합니다.', ogImage, brandClass = '' } = Astro.props;
+const { title, description = 'TypeMIN — 만들고, 기록하고, 탐색합니다.', ogImage, brandClass = '', navMode = 'subbrand' } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const resolvedOgImage = ogImage ?? new URL('/og-default.svg', Astro.site).toString();
 const currentPath = Astro.url.pathname;
@@ -443,33 +444,53 @@ const currentPath = Astro.url.pathname;
   <body class={brandClass}>
     <nav class="nav">
       <div class="container nav__inner">
-        <a href="/" class="nav__logo">TypeMIN</a>
-        <div class="nav__links">
-          <a href="/writing" class={`nav__link${currentPath.startsWith('/writing') ? ' active' : ''}`}>writing</a>
-          <a href="/photo"   class={`nav__link${currentPath.startsWith('/photo')   ? ' active' : ''}`}>photo</a>
-          <a href="/dev"     class={`nav__link${currentPath.startsWith('/dev')     ? ' active' : ''}`}>dev</a>
-          <a href="/music"   class={`nav__link${currentPath.startsWith('/music')   ? ' active' : ''}`}>music</a>
-          <a href="/uses"    class={`nav__link${currentPath === '/uses/' || currentPath === '/uses' ? ' active' : ''}`}>uses</a>
-          <a href="/about"   class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>about</a>
-          <button class="theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
-            <!-- sun: shown in dark mode to switch to light -->
-            <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="8" cy="8" r="3" fill="currentColor"/>
-              <line x1="8" y1="1" x2="8" y2="3"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="1" y1="8" x2="3" y2="8"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="13" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="3.05" y1="3.05" x2="4.46" y2="4.46" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="11.54" y1="11.54" x2="12.95" y2="12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="3.05" y1="12.95" x2="4.46" y2="11.54" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="11.54" y1="4.46" x2="12.95" y2="3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <!-- moon: shown in light mode to switch to dark -->
-            <svg class="icon--moon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.64-.48A6.5 6.5 0 1 0 14.12 10.6a.5.5 0 0 0-.62-.6z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
+        {navMode === 'main' ? (
+          <>
+            <a href="/" class="nav__logo">TypeMIN</a>
+            <div class="nav__links">
+              <a href="/writing" class={`nav__link${currentPath.startsWith('/writing') ? ' active' : ''}`}>writing</a>
+              <a href="/photo"   class={`nav__link${currentPath.startsWith('/photo')   ? ' active' : ''}`}>photo</a>
+              <a href="/dev"     class={`nav__link${currentPath.startsWith('/dev')     ? ' active' : ''}`}>dev</a>
+              <a href="/music"   class={`nav__link${currentPath.startsWith('/music')   ? ' active' : ''}`}>music</a>
+              <a href="/about"   class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>about</a>
+              <button class="theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
+                <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="3" fill="currentColor"/>
+                  <line x1="8" y1="1" x2="8" y2="3"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="1" y1="8" x2="3" y2="8"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="13" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="3.05" y1="3.05" x2="4.46" y2="4.46" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="11.54" y1="11.54" x2="12.95" y2="12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="3.05" y1="12.95" x2="4.46" y2="11.54" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="11.54" y1="4.46" x2="12.95" y2="3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <svg class="icon--moon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.64-.48A6.5 6.5 0 1 0 14.12 10.6a.5.5 0 0 0-.62-.6z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </>
+        ) : (
+          <div class="nav__links">
+            <button class="theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
+              <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="8" cy="8" r="3" fill="currentColor"/>
+                <line x1="8" y1="1" x2="8" y2="3"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="1" y1="8" x2="3" y2="8"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="13" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="3.05" y1="3.05" x2="4.46" y2="4.46" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="11.54" y1="11.54" x2="12.95" y2="12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="3.05" y1="12.95" x2="4.46" y2="11.54" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="11.54" y1="4.46" x2="12.95" y2="3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <svg class="icon--moon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.64-.48A6.5 6.5 0 1 0 14.12 10.6a.5.5 0 0 0-.62-.6z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </nav>
 

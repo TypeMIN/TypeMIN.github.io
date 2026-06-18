@@ -10,7 +10,7 @@ interface Props {
 const { title, description, ogImage } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-typemin">
+<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-typemin" navMode="main">
   <slot />
 </BaseLayout>
 
