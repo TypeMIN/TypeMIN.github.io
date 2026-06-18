@@ -3,19 +3,28 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  brandClass?: string;
 }
 
-const { title, description = 'TypeMIN — 만들고, 기록하고, 탐색합니다.', ogImage } = Astro.props;
+const { title, description = 'TypeMIN — 만들고, 기록하고, 탐색합니다.', ogImage, brandClass = '' } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const resolvedOgImage = ogImage ?? new URL('/og-default.svg', Astro.site).toString();
 const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="ko" data-theme="dark">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- anti-FOUC: set theme before render -->
+    <script is:inline>
+      (() => {
+        const saved = localStorage.getItem('theme');
+        const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = saved ?? sys;
+      })();
+    </script>
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -29,74 +38,220 @@ const currentPath = Astro.url.pathname;
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <title>{title}</title>
-    <script is:inline>
-      (function() {
-        var saved = localStorage.getItem('theme');
-        var theme = saved === 'light' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-      })();
-    </script>
+    <slot name="head" />
     <style is:global>
-      /* ── 폰트 ── */
+      /* ─────────────────────────────────────────
+         1. FONTS
+      ───────────────────────────────────────── */
       :root {
         --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
         --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
       }
 
-      /* ── 컬러 변수 — 다크 기본 ── */
+      /* ─────────────────────────────────────────
+         2. BASE PALETTE — Light
+      ───────────────────────────────────────── */
+      :root {
+        /* brand colors */
+        --cobalt:      #315fbd;
+        --cobalt-light: var(--cobalt);
+        --cobalt-dim:  #eef3ff;
+        --teal:        #237a68;
+        --teal-light:  var(--teal);
+        --teal-dim:    #edf8f5;
+        --gold:        #9b7a32;
+        --gold-light:  var(--gold);
+        --gold-dim:    #f8f1df;
+        --crimson:     #ad4058;
+        --crimson-light: var(--crimson);
+        --crimson-dim: #faedf1;
+
+        /* surface */
+        --bg-0: #ffffff;
+        --bg-1: #f7f7f5;
+        --bg-2: #eeeeeb;
+        --bg-3: #e2e2dd;
+
+        /* text */
+        --text-primary:   #191919;
+        --text-secondary: #545454;
+        --text-tertiary:  #8a8a84;
+
+        /* border */
+        --border:      rgba(25, 25, 25, 0.14);
+        --border-soft: rgba(25, 25, 25, 0.07);
+
+        /* nav */
+        --nav-bg:     rgba(255, 255, 255, 0.86);
+        --nav-border: rgba(25, 25, 25, 0.14);
+      }
+
+      /* ─────────────────────────────────────────
+         3. BASE PALETTE — Dark
+      ───────────────────────────────────────── */
       [data-theme="dark"] {
-        --cobalt:       #1E3A8A;
-        --cobalt-light: #4A6ABE;
-        --cobalt-dim:   #0C1030;
-        --gold:         #D4A020;
-        --gold-light:   #EAB840;
-        --gold-dim:     #1C1400;
-        --crimson:      #C03030;
-        --crimson-light:#E05050;
-        --crimson-dim:  #1A0808;
-        --teal:         #30A888;
-        --teal-light:   #50C8A8;
-        --teal-dim:     #081410;
+        --cobalt:      #7096e8;
+        --cobalt-light: var(--cobalt);
+        --cobalt-dim:  rgba(112, 150, 232, 0.16);
+        --teal:        #40c0a4;
+        --teal-light:  var(--teal);
+        --teal-dim:    rgba(64, 192, 164, 0.16);
+        --gold:        #c9a84c;
+        --gold-light:  var(--gold);
+        --gold-dim:    rgba(201, 168, 76, 0.16);
+        --crimson:     #e05572;
+        --crimson-light: var(--crimson);
+        --crimson-dim: rgba(224, 85, 114, 0.16);
 
-        --bg-0: #08090F;
-        --bg-1: #0E1020;
-        --bg-2: #161830;
-        --bg-3: #1E2040;
+        --bg-0: #111111;
+        --bg-1: #1a1a1a;
+        --bg-2: #232323;
+        --bg-3: #2c2c2c;
 
-        --text-primary:   #E8EAFF;
-        --text-secondary: #A0A8CC;
-        --text-tertiary:  #606888;
-        --border:         rgba(255,255,255,0.08);
-        --border-soft:    rgba(255,255,255,0.04);
+        --text-primary:   #f0ede8;
+        --text-secondary: #a8a8a0;
+        --text-tertiary:  #5c5c56;
+
+        --border:      rgba(255, 255, 255, 0.10);
+        --border-soft: rgba(255, 255, 255, 0.05);
+
+        --nav-bg:     rgba(17, 17, 17, 0.88);
+        --nav-border: rgba(255, 255, 255, 0.10);
       }
 
-      [data-theme="light"] {
-        --cobalt:       #1E3A8A;
-        --cobalt-light: #4A6ABE;
-        --cobalt-dim:   #EEF2FF;
-        --gold:         #D4A020;
-        --gold-light:   #B8820A;
-        --gold-dim:     #FFFBEB;
-        --crimson:      #C03030;
-        --crimson-light:#A01010;
-        --crimson-dim:  #FFF1F1;
-        --teal:         #30A888;
-        --teal-light:   #187860;
-        --teal-dim:     #F0FDF9;
+      /* ─────────────────────────────────────────
+         4. BRAND THEMES — Light overrides
+      ───────────────────────────────────────── */
 
-        --bg-0: #FFFFFF;
-        --bg-1: #F7F8FC;
-        --bg-2: #EEEEF6;
-        --bg-3: #E0E2F0;
-
-        --text-primary:   #0A0C1A;
-        --text-secondary: #404468;
-        --text-tertiary:  #8090B0;
-        --border:         rgba(0,0,0,0.1);
-        --border-soft:    rgba(0,0,0,0.05);
+      /* TypeMIN: neutral white, cobalt */
+      .theme-typemin {
+        --brand-accent: var(--cobalt);
+        --content-width: clamp(300px, 92vw, 980px);
       }
 
-      /* ── 리셋 & 기본 ── */
+      /* carlinis: warm parchment — literary/editorial */
+      .theme-carlinis {
+        --brand-accent: var(--teal);
+        --content-width: clamp(300px, 92vw, 900px);
+        --bg-0: #fdf6e8;
+        --bg-1: #f7edd6;
+        --bg-2: #ede2c4;
+        --bg-3: #e0d4b0;
+        --text-primary:   #1e1a12;
+        --text-secondary: #52492f;
+        --text-tertiary:  #9a8e72;
+        --border:      rgba(30, 24, 10, 0.13);
+        --border-soft: rgba(30, 24, 10, 0.06);
+        --nav-bg:  rgba(253, 246, 232, 0.92);
+        --nav-border: rgba(30, 24, 10, 0.13);
+      }
+
+      /* kine.miles: neutral light — photo gallery */
+      .theme-kinemiles {
+        --brand-accent: var(--gold);
+        --content-width: clamp(300px, 96vw, 1160px);
+        --bg-0: #f5f5f3;
+        --bg-1: #eceae8;
+        --bg-2: #e0deda;
+        --bg-3: #d2d0cc;
+        --border:      rgba(25, 25, 25, 0.12);
+        --border-soft: rgba(25, 25, 25, 0.06);
+        --nav-bg:  rgba(245, 245, 243, 0.90);
+        --nav-border: rgba(25, 25, 25, 0.12);
+      }
+
+      /* dev: cool off-white — technical */
+      .theme-dev {
+        --brand-accent: var(--cobalt);
+        --content-width: clamp(300px, 92vw, 900px);
+        --bg-0: #f7f9fd;
+        --bg-1: #eef2f9;
+        --bg-2: #e2e8f4;
+        --bg-3: #d2daf0;
+        --border:      rgba(20, 30, 80, 0.12);
+        --border-soft: rgba(20, 30, 80, 0.06);
+        --nav-bg:  rgba(247, 249, 253, 0.90);
+        --nav-border: rgba(20, 30, 80, 0.12);
+      }
+
+      /* music: warm tint light — intimate */
+      .theme-music {
+        --brand-accent: var(--crimson);
+        --content-width: clamp(300px, 92vw, 900px);
+        --bg-0: #fdf6f6;
+        --bg-1: #f5ecec;
+        --bg-2: #e8dede;
+        --bg-3: #d8cccc;
+        --border:      rgba(60, 20, 30, 0.12);
+        --border-soft: rgba(60, 20, 30, 0.06);
+        --nav-bg:  rgba(253, 246, 246, 0.90);
+        --nav-border: rgba(60, 20, 30, 0.12);
+      }
+
+      /* ─────────────────────────────────────────
+         5. BRAND THEMES — Dark overrides
+      ───────────────────────────────────────── */
+
+      /* carlinis dark: deep warm amber */
+      [data-theme="dark"] .theme-carlinis {
+        --bg-0: #18140c;
+        --bg-1: #221c10;
+        --bg-2: #2c2414;
+        --bg-3: #382e1a;
+        --text-primary:   #f0e8d4;
+        --text-secondary: #b09a78;
+        --text-tertiary:  #6a5a40;
+        --border:      rgba(255, 224, 160, 0.10);
+        --border-soft: rgba(255, 224, 160, 0.05);
+        --nav-bg:  rgba(24, 20, 12, 0.94);
+        --nav-border: rgba(255, 224, 160, 0.10);
+      }
+
+      /* kine.miles dark: near black — gallery noir */
+      [data-theme="dark"] .theme-kinemiles {
+        --bg-0: #0c0c0c;
+        --bg-1: #161616;
+        --bg-2: #202020;
+        --bg-3: #2a2a2a;
+        --text-primary:   #f0ede8;
+        --text-secondary: #a0a098;
+        --border:      rgba(255, 255, 255, 0.09);
+        --border-soft: rgba(255, 255, 255, 0.04);
+        --nav-bg:  rgba(12, 12, 12, 0.94);
+        --nav-border: rgba(255, 255, 255, 0.09);
+      }
+
+      /* dev dark: deep cool blue-grey */
+      [data-theme="dark"] .theme-dev {
+        --bg-0: #0d1117;
+        --bg-1: #161b24;
+        --bg-2: #20262f;
+        --bg-3: #28303c;
+        --text-primary:   #e8edf4;
+        --text-secondary: #8898aa;
+        --border:      rgba(120, 160, 255, 0.10);
+        --border-soft: rgba(120, 160, 255, 0.05);
+        --nav-bg:  rgba(13, 17, 23, 0.94);
+        --nav-border: rgba(120, 160, 255, 0.10);
+      }
+
+      /* music dark: deep warm dark */
+      [data-theme="dark"] .theme-music {
+        --bg-0: #100b0b;
+        --bg-1: #1c1212;
+        --bg-2: #261818;
+        --bg-3: #301e1e;
+        --text-primary:   #f2ece8;
+        --text-secondary: #a09088;
+        --border:      rgba(255, 180, 180, 0.09);
+        --border-soft: rgba(255, 180, 180, 0.04);
+        --nav-bg:  rgba(16, 11, 11, 0.94);
+        --nav-border: rgba(255, 180, 180, 0.09);
+      }
+
+      /* ─────────────────────────────────────────
+         6. RESET & BASE
+      ───────────────────────────────────────── */
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
       html { scroll-behavior: smooth; }
@@ -105,7 +260,7 @@ const currentPath = Astro.url.pathname;
         font-family: var(--font-sans);
         background: var(--bg-0);
         color: var(--text-primary);
-        line-height: 1.7;
+        line-height: 1.6;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -114,7 +269,7 @@ const currentPath = Astro.url.pathname;
 
       main { flex: 1; }
 
-      a { color: var(--cobalt-light); text-decoration: none; }
+      a { color: var(--brand-accent, var(--cobalt)); text-decoration: none; }
       a:hover { text-decoration: underline; }
 
       code {
@@ -140,81 +295,113 @@ const currentPath = Astro.url.pathname;
 
       img { max-width: 100%; height: auto; }
 
-      /* ── 공통 컴포넌트 ── */
-      .container { width: 100%; max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
-      .container--wide { max-width: 1200px; }
+      /* ─────────────────────────────────────────
+         7. COMMON UTILITIES
+      ───────────────────────────────────────── */
+      .container         { width: 100%; max-width: var(--content-width, 980px); margin: 0 auto; padding: 0 1.5rem; }
+      .container--wide   { max-width: 1160px; }
+      .container--reading { max-width: 740px; }
 
-      .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.25rem; border-radius: 7px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.15s, background 0.15s; white-space: nowrap; }
+      .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.52rem 0.9rem; border-radius: 6px; font-size: 0.84rem; font-weight: 520; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.15s, background 0.15s; white-space: nowrap; }
       .btn:hover { text-decoration: none; opacity: 0.85; }
-      .btn--primary { background: var(--cobalt); color: #EEF0FA; }
+      .btn--primary { background: var(--brand-accent, var(--cobalt)); color: #EEF0FA; }
       .btn--ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
       .btn--ghost:hover { background: var(--bg-1); opacity: 1; }
 
       .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; letter-spacing: 0.05em; }
-      .badge--dev     { background: var(--cobalt-dim); color: var(--cobalt-light); }
-      .badge--photo   { background: var(--gold-dim);   color: var(--gold-light);   }
-      .badge--music   { background: var(--crimson-dim);color: var(--crimson-light);}
-      .badge--writing { background: var(--teal-dim);   color: var(--teal-light);   }
-      .badge--essay   { background: var(--bg-2);       color: var(--text-secondary);}
+      .badge--dev     { background: var(--cobalt-dim); color: var(--cobalt); }
+      .badge--photo   { background: var(--gold-dim);   color: var(--gold);   }
+      .badge--music   { background: var(--crimson-dim);color: var(--crimson); }
+      .badge--writing { background: var(--teal-dim);   color: var(--teal);   }
+      .badge--essay   { background: var(--bg-2);       color: var(--text-secondary); }
 
       .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 1rem; }
 
-      /* ── 네비게이션 ── */
+      /* ─────────────────────────────────────────
+         8. NAV
+      ───────────────────────────────────────── */
       .nav {
-        border-bottom: 0.5px solid var(--border);
-        background: var(--bg-0);
+        border-bottom: 1px solid var(--nav-border, var(--border));
+        background: var(--nav-bg, rgba(255, 255, 255, 0.86));
         position: sticky;
         top: 0;
         z-index: 100;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        transition: background 0.2s, border-color 0.2s;
       }
 
       .nav__inner {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        height: 52px;
+        height: 56px;
+        gap: 1rem;
       }
 
       .nav__logo {
-        font-size: 1rem;
-        font-weight: 700;
+        font-size: 0.9rem;
+        font-weight: 660;
         color: var(--text-primary);
         letter-spacing: -0.01em;
-      }
-      .nav__logo span { color: var(--cobalt-light); }
-
-      .nav__links { display: flex; align-items: center; gap: 1.5rem; }
-
-      .nav__link { font-size: 0.875rem; color: var(--text-secondary); transition: color 0.15s; }
-      .nav__link:hover, .nav__link.active { color: var(--text-primary); text-decoration: none; }
-
-      .nav__toggle {
-        background: none;
-        border: 0.5px solid var(--border);
-        border-radius: 6px;
-        padding: 5px 8px;
-        cursor: pointer;
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        font-family: var(--font-sans);
-        transition: background 0.15s;
         flex-shrink: 0;
       }
-      .nav__toggle:hover { background: var(--bg-2); }
 
-      /* ── 푸터 ── */
+      .nav__links { display: flex; align-items: center; gap: 1rem; }
+
+      .nav__link {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        transition: color 0.15s;
+        letter-spacing: 0.01em;
+      }
+      .nav__link:hover,
+      .nav__link.active {
+        color: var(--brand-accent, var(--text-primary));
+        text-decoration: none;
+      }
+
+      /* theme toggle button */
+      .theme-toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-tertiary);
+        padding: 0.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: color 0.15s, background 0.15s;
+        flex-shrink: 0;
+        margin-left: 0.25rem;
+      }
+      .theme-toggle:hover {
+        color: var(--text-primary);
+        background: var(--bg-2);
+      }
+      .theme-toggle svg { width: 15px; height: 15px; display: block; }
+
+      /* show sun in dark mode, moon in light mode */
+      html[data-theme="dark"]  .icon--moon { display: none; }
+      html[data-theme="light"] .icon--sun  { display: none; }
+      html:not([data-theme])   .icon--sun  { display: none; }
+
+      /* ─────────────────────────────────────────
+         9. FOOTER
+      ───────────────────────────────────────── */
       .footer {
-        border-top: 0.5px solid var(--border);
+        border-top: 1px solid var(--border);
         padding: 2rem 0;
         margin-top: 4rem;
+        transition: border-color 0.2s;
       }
 
       .footer__inner {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: var(--text-tertiary);
       }
 
@@ -222,7 +409,9 @@ const currentPath = Astro.url.pathname;
       .footer__links a { color: var(--text-tertiary); }
       .footer__links a:hover { color: var(--text-secondary); text-decoration: none; }
 
-      /* ── prose (블로그 글 본문) ── */
+      /* ─────────────────────────────────────────
+         10. PROSE
+      ───────────────────────────────────────── */
       .prose h1, .prose h2, .prose h3, .prose h4 { color: var(--text-primary); font-weight: 600; line-height: 1.3; margin: 2rem 0 0.75rem; }
       .prose h1 { font-size: 1.75rem; }
       .prose h2 { font-size: 1.35rem; border-bottom: 0.5px solid var(--border); padding-bottom: 0.5rem; }
@@ -230,33 +419,56 @@ const currentPath = Astro.url.pathname;
       .prose p { margin: 0.9rem 0; color: var(--text-secondary); }
       .prose ul, .prose ol { padding-left: 1.5rem; margin: 0.9rem 0; color: var(--text-secondary); }
       .prose li { margin: 0.3rem 0; }
-      .prose blockquote { border-left: 3px solid var(--cobalt-light); padding: 0.5rem 1rem; margin: 1rem 0; color: var(--text-secondary); background: var(--bg-1); border-radius: 0 6px 6px 0; }
+      .prose blockquote { border-left: 3px solid var(--brand-accent, var(--cobalt)); padding: 0.5rem 1rem; margin: 1rem 0; color: var(--text-secondary); background: var(--bg-1); border-radius: 0 6px 6px 0; }
       .prose hr { border: none; border-top: 0.5px solid var(--border); margin: 2rem 0; }
-      .prose a { color: var(--cobalt-light); }
+      .prose a { color: var(--brand-accent, var(--cobalt)); }
       .prose strong { color: var(--text-primary); font-weight: 600; }
 
-      /* ── 애니메이션 ── */
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-      .fade-in { animation: fadeIn 0.5s ease both; }
+      /* ─────────────────────────────────────────
+         11. ANIMATIONS
+      ───────────────────────────────────────── */
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+      .fade-in { animation: fadeIn 0.45s ease both; }
 
-      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-      /* ── 반응형 ── */
+      /* ─────────────────────────────────────────
+         12. RESPONSIVE
+      ───────────────────────────────────────── */
       @media (max-width: 640px) {
-        .nav__links { gap: 1rem; }
-        .nav__link { font-size: 0.8rem; }
+        .nav__inner { height: auto; min-height: 50px; padding-top: 0.6rem; padding-bottom: 0.6rem; align-items: flex-start; }
+        .nav__links { gap: 0.6rem; justify-content: flex-end; flex-wrap: wrap; }
+        .nav__link  { font-size: 0.76rem; }
       }
     </style>
   </head>
-  <body>
+  <body class={brandClass}>
     <nav class="nav">
       <div class="container nav__inner">
-        <a href="/" class="nav__logo">Type<span>MIN</span></a>
+        <a href="/" class="nav__logo">TypeMIN</a>
         <div class="nav__links">
-          <a href="/posts" class={`nav__link${currentPath.startsWith('/posts') ? ' active' : ''}`}>글</a>
-          <a href="/works" class={`nav__link${currentPath.startsWith('/works') ? ' active' : ''}`}>Works</a>
-          <a href="/about" class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>About</a>
-          <button class="nav__toggle" id="theme-toggle" aria-label="테마 전환">🌙</button>
+          <a href="/writing" class={`nav__link${currentPath.startsWith('/writing') ? ' active' : ''}`}>writing</a>
+          <a href="/photo"   class={`nav__link${currentPath.startsWith('/photo')   ? ' active' : ''}`}>photo</a>
+          <a href="/dev"     class={`nav__link${currentPath.startsWith('/dev')     ? ' active' : ''}`}>dev</a>
+          <a href="/music"   class={`nav__link${currentPath.startsWith('/music')   ? ' active' : ''}`}>music</a>
+          <a href="/uses"    class={`nav__link${currentPath === '/uses/' || currentPath === '/uses' ? ' active' : ''}`}>uses</a>
+          <a href="/about"   class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>about</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
+            <!-- sun: shown in dark mode to switch to light -->
+            <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="8" cy="8" r="3" fill="currentColor"/>
+              <line x1="8" y1="1" x2="8" y2="3"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="1" y1="8" x2="3" y2="8"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="13" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="3.05" y1="3.05" x2="4.46" y2="4.46" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="11.54" y1="11.54" x2="12.95" y2="12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="3.05" y1="12.95" x2="4.46" y2="11.54" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="11.54" y1="4.46" x2="12.95" y2="3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <!-- moon: shown in light mode to switch to dark -->
+            <svg class="icon--moon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.64-.48A6.5 6.5 0 1 0 14.12 10.6a.5.5 0 0 0-.62-.6z" fill="currentColor"/>
+            </svg>
+          </button>
         </div>
       </div>
     </nav>
@@ -275,20 +487,14 @@ const currentPath = Astro.url.pathname;
       </div>
     </footer>
 
-    <script is:inline>
-      var btn = document.getElementById('theme-toggle');
-      function syncBtn() {
-        var t = document.documentElement.getAttribute('data-theme');
-        if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
-      }
-      syncBtn();
+    <script>
+      const btn = document.getElementById('theme-toggle');
       if (btn) {
-        btn.addEventListener('click', function() {
-          var cur = document.documentElement.getAttribute('data-theme');
-          var next = cur === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', next);
+        btn.addEventListener('click', () => {
+          const html = document.documentElement;
+          const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+          html.dataset.theme = next;
           localStorage.setItem('theme', next);
-          syncBtn();
         });
       }
     </script>

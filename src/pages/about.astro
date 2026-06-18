@@ -1,135 +1,197 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import TypeminLayout from '../layouts/TypeminLayout.astro';
 
-const skills = {
-  '프론트엔드': ['HTML/CSS', 'JavaScript', 'TypeScript', 'Astro', 'React'],
-  '도구': ['Git', 'GitHub Actions', 'VS Code'],
-  '학습 중': ['Node.js', 'Three.js'],
-};
-
-const interests = [
-  { key: 'dev',     label: 'Dev',     emoji: '💻', desc: '웹 개발 공부, 사이드 프로젝트' },
-  { key: 'photo',   label: 'Photo',   emoji: '📷', desc: '필름 사진, 여행, 일상 기록' },
-  { key: 'music',   label: 'Music',   emoji: '🎵', desc: 'DAW로 만드는 음악, 작곡' },
-  { key: 'writing', label: 'Writing', emoji: '✍️',  desc: '에세이, 독서 노트, 생각 정리' },
+const links = [
+  ['carlinis', 'writing', '글, 회고, 독서 기록', '/writing'],
+  ['kine.miles', 'photo', '사진 시리즈와 촬영 노트', '/photo'],
+  ['dev', 'development', '개발, 자동화, 실험 기록', '/dev'],
+  ['music', 'music', '곡 단위의 음악 기록', '/music'],
 ];
 ---
 
-<BaseLayout title="About — TypeMIN" description="TypeMIN에 대해">
-  <div class="container" style="padding-top: 2.5rem; padding-bottom: 3rem;">
-
-    <div class="about-hero fade-in">
-      <div class="avatar">TM</div>
+<TypeminLayout title="About — TypeMIN" description="이민식 / TypeMIN 소개">
+  <div class="about container container--wide">
+    <header class="about__header">
       <div>
-        <h1 class="about-name">TypeMIN</h1>
-        <p class="about-tagline">만들고, 기록하고, 탐색합니다.</p>
+        <p class="eyebrow">About</p>
+        <h1>이민식</h1>
       </div>
-    </div>
+      <p class="intro">
+        만들고, 기록하고, 탐색하는 일을 합니다. 이 사이트는 하나의 블로그라기보다
+        글, 사진, 개발, 음악을 각각의 방식으로 정리하는 개인 아카이브입니다.
+      </p>
+    </header>
 
-    <div class="about-bio">
-      <p>개발, 사진, 음악, 글쓰기를 좋아합니다. 배운 것들을 기록하고, 만들고 싶은 것들을 만들며, 새로운 것들을 탐색하는 걸 즐깁니다.</p>
-      <p>이 사이트는 그 모든 과정의 기록 공간이에요.</p>
-    </div>
+    <section class="profile-grid" aria-label="profile details">
+      <div class="profile-block">
+        <span>focus</span>
+        <p>기술과 창작을 분리하지 않고, 작업의 과정과 결과가 서로를 설명하게 만드는 방식에 관심이 있습니다.</p>
+      </div>
+      <div class="profile-block">
+        <span>currently</span>
+        <p>Astro 기반 개인 브랜드 허브를 정리하고, Markdown으로 계속 확장 가능한 구조를 만들고 있습니다.</p>
+      </div>
+    </section>
 
-    <section class="about-section">
-      <p class="section-label">관심 분야</p>
-      <div class="interest-grid">
-        {interests.map(item => (
-          <div class={`interest-card interest-card--${item.key}`}>
-            <span class="interest-emoji">{item.emoji}</span>
-            <div>
-              <div class={`badge badge--${item.key}`} style="margin-bottom: 0.35rem;">{item.label}</div>
-              <p class="interest-desc">{item.desc}</p>
-            </div>
-          </div>
+    <section class="brand-index" aria-label="brand index">
+      <div class="section-row">
+        <p class="eyebrow">Brands</p>
+        <span>4 spaces</span>
+      </div>
+      <div class="brand-list">
+        {links.map(([name, type, description, href]) => (
+          <a href={href} class={`brand-row brand-row--${type}`}>
+            <strong>{name}</strong>
+            <span>{type}</span>
+            <p>{description}</p>
+          </a>
         ))}
       </div>
     </section>
 
-    <section class="about-section">
-      <p class="section-label">스킬</p>
-      <div class="skill-groups">
-        {Object.entries(skills).map(([group, items]) => (
-          <div class="skill-group">
-            <p class="skill-group__label">{group}</p>
-            <div class="skill-tags">
-              {items.map(s => <span class="skill-tag">{s}</span>)}
-            </div>
-          </div>
-        ))}
+    <section class="contact">
+      <div class="section-row">
+        <p class="eyebrow">Contact</p>
       </div>
-    </section>
-
-    <section class="about-section">
-      <p class="section-label">연결</p>
-      <div class="contact-links">
-        <a href="https://github.com/TypeMIN" target="_blank" rel="noopener" class="btn btn--ghost">GitHub ↗</a>
-        <a href="mailto:typemin99@gmail.com" class="btn btn--ghost">이메일 ↗</a>
+      <div class="contact-list">
+        <a href="https://github.com/TypeMIN" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:typemin99@gmail.com">typemin99@gmail.com</a>
       </div>
     </section>
   </div>
-</BaseLayout>
+</TypeminLayout>
 
 <style>
-  .about-hero {
-    display: flex;
+  .about {
+    padding-bottom: 5rem;
+    padding-top: clamp(3rem, 7vw, 5rem);
+  }
+
+  .about__header {
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.7fr);
+    padding-bottom: 2rem;
+  }
+
+  .eyebrow {
+    color: var(--text-tertiary);
+    font-size: 0.74rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.8rem;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    color: var(--text-primary);
+    font-size: clamp(2.2rem, 7vw, 4.5rem);
+    font-weight: 640;
+    letter-spacing: 0;
+    line-height: 0.95;
+    margin: 0;
+  }
+
+  .intro {
+    align-self: end;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  .profile-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 2rem 0 4rem;
+  }
+
+  .profile-block {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+
+  .profile-block span,
+  .section-row span,
+  .brand-row span {
+    color: var(--text-tertiary);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .profile-block p {
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 0.7rem 0 0;
+  }
+
+  .brand-index,
+  .contact {
+    margin-top: 3rem;
+  }
+
+  .section-row {
     align-items: center;
-    gap: 1.25rem;
-    margin-bottom: 2rem;
-  }
-
-  .avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: var(--cobalt-dim);
-    border: 2px solid var(--cobalt-light);
+    border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--cobalt-light);
-    flex-shrink: 0;
+    justify-content: space-between;
   }
 
-  .about-name { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-  .about-tagline { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.2rem; }
+  .brand-row {
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 10rem 8rem minmax(0, 1fr);
+    padding: 1rem 0;
+    text-decoration: none;
+  }
 
-  .about-bio { margin-bottom: 2.5rem; }
-  .about-bio p { color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.7; }
+  .brand-row:hover {
+    text-decoration: none;
+  }
 
-  .about-section { margin-bottom: 2rem; }
+  .brand-row strong {
+    font-size: 1.05rem;
+    font-weight: 580;
+  }
 
-  .interest-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 480px) { .interest-grid { grid-template-columns: 1fr; } }
+  .brand-row p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+  }
 
-  .interest-card {
+  .brand-row--writing:hover strong { color: var(--teal); }
+  .brand-row--photo:hover strong { color: var(--gold); }
+  .brand-row--development:hover strong { color: var(--cobalt); }
+  .brand-row--music:hover strong { color: var(--crimson); }
+
+  .contact-list {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    border-radius: 10px;
-    border: 0.5px solid var(--border);
-    background: var(--bg-1);
-    transition: border-color 0.15s;
-  }
-  .interest-card--dev:hover     { border-color: var(--cobalt-light); }
-  .interest-card--photo:hover   { border-color: var(--gold-light); }
-  .interest-card--music:hover   { border-color: var(--crimson-light); }
-  .interest-card--writing:hover { border-color: var(--teal-light); }
-
-  .interest-emoji { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
-  .interest-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
-
-  .skill-groups { display: flex; flex-direction: column; gap: 0.75rem; }
-  .skill-group__label { font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.4rem; }
-  .skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  .skill-tag {
-    font-size: 0.75rem; padding: 3px 10px; border-radius: 99px;
-    background: var(--bg-2); color: var(--text-secondary);
-    border: 0.5px solid var(--border);
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1rem;
   }
 
-  .contact-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .contact-list a {
+    color: var(--text-primary);
+    font-size: 0.92rem;
+  }
+
+  @media (max-width: 760px) {
+    .about__header,
+    .profile-grid,
+    .brand-row {
+      grid-template-columns: 1fr;
+    }
+
+    .brand-row {
+      gap: 0.3rem;
+    }
+  }
 </style>

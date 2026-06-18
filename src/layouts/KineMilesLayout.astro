@@ -1,0 +1,22 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const { title, description, ogImage } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-kinemiles">
+  <slot />
+</BaseLayout>
+
+<style is:global>
+  /* kine.miles: 이미지 중심 — 텍스트 최소화, 여백 충분히 */
+  .theme-kinemiles img {
+    border-radius: 4px;
+  }
+</style>

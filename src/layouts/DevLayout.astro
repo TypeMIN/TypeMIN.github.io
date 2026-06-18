@@ -1,0 +1,28 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} brandClass="theme-dev">
+  <slot />
+</BaseLayout>
+
+<style is:global>
+  /* dev: 기술 노트 — 모노스페이스 강조, 정보 밀도 */
+  .theme-dev .prose pre,
+  .theme-dev .prose code {
+    font-size: 0.85rem;
+  }
+
+  /* 번호/레이블에 모노스페이스 적용 */
+  .theme-dev [class*="card__top"],
+  .theme-dev [class*="meta"] {
+    font-family: var(--font-mono);
+  }
+</style>

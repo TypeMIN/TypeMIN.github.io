@@ -1,0 +1,512 @@
+---
+import { getCollection, render } from 'astro:content';
+import DevLayout from '../../layouts/DevLayout.astro';
+import TagList from '../../components/TagList.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('dev', ({ data }) => !data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const isProject = entry.data.type === 'project';
+const hasDemo   = !!entry.data.demo;
+
+const STATUS_LABEL: Record<string, string> = {
+  active:   'active',
+  wip:      'work in progress',
+  archived: 'archived',
+};
+const STATUS_COLOR: Record<string, string> = {
+  active:   '#28c840',
+  wip:      '#febc2e',
+  archived: '#666',
+};
+---
+
+<DevLayout title={`${entry.data.title} — dev`} description={entry.data.description}>
+  {isProject ? (
+    <!-- ── 프로젝트: split layout ── -->
+    <div class={`project-layout container ${hasDemo ? 'has-demo' : 'no-demo'}`}>
+
+      <!-- 왼쪽: 메타 + 콘텐츠 -->
+      <aside class="project-meta">
+        <a class="back-link" href="/dev">← dev</a>
+
+        {entry.data.status && (
+          <div class="status-row">
+            <span
+              class="status-dot"
+              style={`background: ${STATUS_COLOR[entry.data.status] ?? STATUS_COLOR.active}`}
+            ></span>
+            <span class="status-text">{STATUS_LABEL[entry.data.status] ?? entry.data.status}</span>
+          </div>
+        )}
+
+        <h1>{entry.data.title}</h1>
+        <p class="project-desc">{entry.data.description}</p>
+
+        {entry.data.stack.length > 0 && (
+          <div class="stack-list">
+            {entry.data.stack.map(s => <span class="stack-badge">{s}</span>)}
+          </div>
+        )}
+
+        <div class="meta-row">
+          <span class="meta-label">date</span>
+          <time class="meta-value">
+            {entry.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+          </time>
+        </div>
+
+        <div class="meta-row">
+          <span class="meta-label">category</span>
+          <span class="meta-value">{entry.data.category}</span>
+        </div>
+
+        {entry.data.tags?.length > 0 && (
+          <div class="meta-row">
+            <span class="meta-label">tags</span>
+            <div class="meta-value"><TagList tags={entry.data.tags} /></div>
+          </div>
+        )}
+
+        <div class="action-row">
+          {entry.data.demo && (
+            <a class="btn-demo" href={entry.data.demo} target="_blank" rel="noopener">
+              Live Demo
+              <svg viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                <path d="M1 9L9 1M9 1H3M9 1v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </a>
+          )}
+          {entry.data.repo && (
+            <a class="btn-ghost" href={entry.data.repo} target="_blank" rel="noopener">GitHub</a>
+          )}
+        </div>
+
+        <div class="prose project-prose">
+          <Content />
+        </div>
+      </aside>
+
+      <!-- 오른쪽: 데모 브라우저 -->
+      {hasDemo && (
+        <div class="demo-pane">
+          <div class="browser-chrome">
+            <div class="browser-chrome__bar">
+              <div class="browser-dots">
+                <span style="background:#ff5f57"></span>
+                <span style="background:#febc2e"></span>
+                <span style="background:#28c840"></span>
+              </div>
+              <div class="browser-url">
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1"/>
+                  <path d="M6 1c-1.5 1.5-2 3-2 5s.5 3.5 2 5" stroke="currentColor" stroke-width="1"/>
+                  <path d="M6 1c1.5 1.5 2 3 2 5s-.5 3.5-2 5" stroke="currentColor" stroke-width="1"/>
+                  <path d="M1 6h10" stroke="currentColor" stroke-width="1"/>
+                </svg>
+                <span>{entry.data.demo}</span>
+              </div>
+              <a class="browser-open" href={entry.data.demo} target="_blank" rel="noopener" title="새 탭에서 열기">
+                <svg viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                  <path d="M1 9L9 1M9 1H3M9 1v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+              </a>
+            </div>
+            <div class="browser-viewport">
+              <iframe
+                src={entry.data.demo}
+                title={`${entry.data.title} demo`}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                loading="lazy"
+              ></iframe>
+              <div class="iframe-fallback">
+                <p>이 사이트는 iframe 임베딩을 허용하지 않습니다.</p>
+                <a href={entry.data.demo} target="_blank" rel="noopener">새 탭에서 열기 →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+  ) : (
+    <!-- ── 포스트: 단일 컬럼 ── -->
+    <article class="container container--reading article-page">
+      <a class="back-link" href="/dev">← dev</a>
+      <header class="article-header">
+        <p class="article-meta">
+          {entry.data.date.toLocaleDateString('ko-KR')} · {entry.data.category}
+        </p>
+        <h1>{entry.data.title}</h1>
+        <p class="article-desc">{entry.data.description}</p>
+        <TagList tags={entry.data.tags} />
+        {(entry.data.repo || entry.data.demo) && (
+          <div class="external-links">
+            {entry.data.repo && <a class="btn-ghost" href={entry.data.repo} target="_blank" rel="noopener">Repo</a>}
+            {entry.data.demo && <a class="btn-ghost" href={entry.data.demo} target="_blank" rel="noopener">Demo</a>}
+          </div>
+        )}
+      </header>
+      <div class="prose">
+        <Content />
+      </div>
+    </article>
+  )}
+</DevLayout>
+
+<style>
+  /* ── 공통 ── */
+  .back-link {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--brand-accent); }
+
+  .btn-demo,
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 6px 14px;
+    border-radius: 5px;
+    border: 1px solid var(--brand-accent);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn-demo {
+    background: var(--brand-accent);
+    color: #fff;
+  }
+  .btn-demo:hover { background: color-mix(in srgb, var(--brand-accent) 80%, #000); }
+  .btn-demo svg { width: 9px; height: 9px; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--brand-accent);
+  }
+  .btn-ghost:hover { background: color-mix(in srgb, var(--brand-accent) 10%, transparent); }
+
+  /* ── 프로젝트 split layout ── */
+  .project-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-top: clamp(3rem, 7vw, 5rem);
+    padding-bottom: 6rem;
+  }
+
+  .project-layout.has-demo {
+    grid-template-columns: 400px 1fr;
+    align-items: start;
+    gap: 2.5rem;
+  }
+
+  .project-meta {
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-text {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .project-meta h1 {
+    font-family: var(--font-mono);
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .project-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 0;
+    word-break: keep-all;
+  }
+
+  .stack-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .stack-badge {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    color: var(--brand-accent);
+    background: color-mix(in srgb, var(--brand-accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-accent) 25%, transparent);
+    border-radius: 3px;
+    padding: 2px 7px;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 0.8rem;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    min-width: 5rem;
+  }
+
+  .meta-value {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  .action-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.25rem;
+  }
+
+  .project-prose { padding-top: 1.5rem; border-top: 1px solid var(--border); }
+
+  /* ── 데모 패널 ── */
+  .demo-pane {
+    position: sticky;
+    top: 2rem;
+    height: calc(100vh - 4rem);
+    min-height: 400px;
+  }
+
+  .browser-chrome {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-1);
+  }
+
+  [data-theme="dark"] .browser-chrome {
+    background: #0a0e14;
+    border-color: rgba(120, 160, 255, 0.12);
+  }
+
+  .browser-chrome__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  [data-theme="dark"] .browser-chrome__bar {
+    background: #111620;
+    border-color: rgba(120, 160, 255, 0.10);
+  }
+
+  .browser-dots {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .browser-dots span {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .browser-url {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 8px;
+    min-width: 0;
+  }
+
+  [data-theme="dark"] .browser-url {
+    background: #0d1117;
+    border-color: rgba(120, 160, 255, 0.08);
+  }
+
+  .browser-url svg {
+    width: 11px;
+    height: 11px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .browser-url span {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .browser-open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .browser-open:hover { color: var(--brand-accent); background: var(--bg-0); }
+  .browser-open svg { width: 9px; height: 9px; }
+
+  .browser-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .browser-viewport iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  .iframe-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: var(--bg-1);
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .iframe-fallback p {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  .iframe-fallback a {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--brand-accent);
+  }
+
+  /* ── 포스트 single column ── */
+  .article-page {
+    padding-bottom: 5rem;
+    padding-top: 4rem;
+  }
+
+  .article-meta {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+    margin-bottom: 0.5rem;
+  }
+
+  .article-header {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .article-header h1 {
+    font-family: var(--font-mono);
+    font-size: clamp(2rem, 6vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0.5rem 0 0.75rem;
+  }
+
+  .article-desc {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  .external-links {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+
+  /* ── 반응형 ── */
+  @media (max-width: 900px) {
+    .project-layout.has-demo {
+      grid-template-columns: 1fr;
+    }
+
+    .project-meta { position: static; }
+
+    .demo-pane {
+      position: static;
+      height: 60vw;
+      min-height: 340px;
+      max-height: 600px;
+    }
+  }
+</style>

@@ -1,0 +1,156 @@
+---
+interface PhotoItem {
+  href: string;
+  title: string;
+  description: string;
+  cover?: string;
+  date?: Date;
+  meta?: string;
+  tags?: string[];
+}
+
+interface Props {
+  items: PhotoItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="photo-grid">
+  {items.map((item) => (
+    <a href={item.href} class="photo-card">
+      <div class="photo-card__frame">
+        {item.cover
+          ? <img src={item.cover} alt={item.title} loading="lazy" />
+          : <span class="photo-card__placeholder">{item.title[0]}</span>
+        }
+        <div class="photo-card__overlay">
+          <h2>{item.title}</h2>
+          {item.meta && <p class="meta">{item.meta}</p>}
+          {item.date && (
+            <time datetime={item.date.toISOString()}>
+              {item.date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit' })}
+            </time>
+          )}
+        </div>
+      </div>
+    </a>
+  ))}
+</div>
+
+<style>
+  .photo-grid {
+    display: grid;
+    gap: 3px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 2rem;
+  }
+
+  .photo-card {
+    display: block;
+    text-decoration: none;
+  }
+
+  .photo-card:hover { text-decoration: none; }
+
+  .photo-card__frame {
+    aspect-ratio: 3 / 2;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-2);
+  }
+
+  /* 첫 번째 카드는 더 크게 */
+  .photo-card:first-child .photo-card__frame {
+    aspect-ratio: 16 / 9;
+  }
+
+  .photo-card:first-child {
+    grid-column: span 2;
+  }
+
+  .photo-card__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .photo-card:hover .photo-card__frame img {
+    transform: scale(1.04);
+  }
+
+  .photo-card__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 3rem;
+    color: var(--text-tertiary);
+    font-weight: 300;
+    letter-spacing: -0.05em;
+  }
+
+  /* 오버레이 — 호버 시 아래서 올라옴 */
+  .photo-card__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.75) 0%,
+      rgba(0, 0, 0, 0.2) 50%,
+      transparent 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem 1rem;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .photo-card:hover .photo-card__overlay {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .photo-card__overlay h2 {
+    color: #fff;
+    font-size: 0.96rem;
+    font-weight: 540;
+    line-height: 1.3;
+    margin: 0 0 0.3rem;
+  }
+
+  .photo-card__overlay .meta {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.74rem;
+    margin: 0 0 0.2rem;
+    letter-spacing: 0.02em;
+  }
+
+  .photo-card__overlay time {
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 700px) {
+    .photo-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .photo-card:first-child {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .photo-grid { grid-template-columns: 1fr; }
+    .photo-card:first-child { grid-column: span 1; }
+  }
+</style>

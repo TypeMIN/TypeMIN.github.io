@@ -1,0 +1,77 @@
+---
+import { getCollection, render } from 'astro:content';
+import MusicLayout from '../../layouts/MusicLayout.astro';
+import TagList from '../../components/TagList.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('music', ({ data }) => !data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<MusicLayout title={`${entry.data.title} — music`} description={entry.data.description}>
+  <article class="container container--reading music-detail">
+    <a class="back-link" href="/music">music</a>
+    <header class="track-header">
+      <p class="article-meta">{entry.data.date.toLocaleDateString('ko-KR')} · {entry.data.category}</p>
+      <h1>{entry.data.title}</h1>
+      <p>{entry.data.description}</p>
+      <TagList tags={entry.data.tags} />
+    </header>
+    <div class="player-frame">
+      {entry.data.link ? (
+        <a href={entry.data.link} target="_blank" rel="noopener">Open track</a>
+      ) : (
+        <span>audio / video placeholder</span>
+      )}
+    </div>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</MusicLayout>
+
+<style>
+  .music-detail {
+    padding-bottom: 5rem;
+    padding-top: 4rem;
+  }
+
+  .back-link,
+  .article-meta {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+  }
+
+  .track-header h1 {
+    color: var(--text-primary);
+    font-size: clamp(2.6rem, 8vw, 5rem);
+    line-height: 0.95;
+    margin: 0.8rem 0;
+  }
+
+  .track-header p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .player-frame {
+    align-items: center;
+    aspect-ratio: 16 / 7;
+    background:
+      linear-gradient(90deg, rgba(192, 48, 48, 0.18), transparent),
+      var(--bg-1);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+</style>

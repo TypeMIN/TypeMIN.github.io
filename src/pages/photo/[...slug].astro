@@ -1,0 +1,135 @@
+---
+import { getCollection, render } from 'astro:content';
+import KineMilesLayout from '../../layouts/KineMilesLayout.astro';
+import TagList from '../../components/TagList.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('photo', ({ data }) => !data.draft);
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const meta = [entry.data.location, entry.data.camera, entry.data.lens].filter(Boolean);
+---
+
+<KineMilesLayout title={`${entry.data.title} — kine.miles`} description={entry.data.description} ogImage={entry.data.cover}>
+  <article class="container container--wide photo-detail">
+    <a class="back-link" href="/photo">photo</a>
+    <header class="photo-detail__header">
+      <div>
+        <p class="article-meta">{entry.data.date.toLocaleDateString('ko-KR')} · {entry.data.category}</p>
+        <h1>{entry.data.title}</h1>
+        <p>{entry.data.description}</p>
+        <TagList tags={entry.data.tags} />
+      </div>
+      <dl>
+        {meta.map((item) => (
+          <>
+            <dt>meta</dt>
+            <dd>{item}</dd>
+          </>
+        ))}
+      </dl>
+    </header>
+    <div class="photo-cover">
+      {entry.data.cover ? <img src={entry.data.cover} alt={`${entry.data.title} cover`} /> : <span>image series preview</span>}
+    </div>
+    <div class="prose photo-note">
+      <Content />
+    </div>
+  </article>
+</KineMilesLayout>
+
+<style>
+  .photo-detail {
+    padding-bottom: 5rem;
+    padding-top: 4rem;
+  }
+
+  .back-link,
+  .article-meta {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+  }
+
+  .photo-detail__header {
+    align-items: end;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr 260px;
+    margin-bottom: 1.5rem;
+  }
+
+  .photo-detail h1 {
+    color: var(--text-primary);
+    font-size: clamp(2.6rem, 8vw, 5rem);
+    line-height: 0.92;
+    margin: 0.7rem 0;
+  }
+
+  .photo-detail__header p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .photo-detail dl {
+    border-left: 0.5px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    margin: 0;
+    padding-left: 1rem;
+  }
+
+  .photo-detail dt {
+    color: var(--text-tertiary);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+  }
+
+  .photo-detail dd {
+    margin: 0 0 0.7rem;
+  }
+
+  .photo-cover {
+    align-items: center;
+    aspect-ratio: 16 / 9;
+    background:
+      linear-gradient(135deg, rgba(212, 160, 32, 0.2), transparent 52%),
+      var(--bg-1);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .photo-cover img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .photo-note {
+    max-width: 760px;
+  }
+
+  @media (max-width: 720px) {
+    .photo-detail__header {
+      align-items: start;
+      grid-template-columns: 1fr;
+    }
+
+    .photo-detail dl {
+      border-left: 0;
+      border-top: 0.5px solid var(--border);
+      padding-left: 0;
+      padding-top: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,458 @@
+---
+import { getCollection } from 'astro:content';
+import CarlinisLayout from '../../layouts/CarlinisLayout.astro';
+
+const entries = (await getCollection('writing', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const featured = entries[0] ?? null;
+---
+
+<CarlinisLayout title="carlinis — writing" description="글, 사유, 회고, 독서 기록.">
+  <div class="manuscript-bg" aria-hidden="true"></div>
+
+  <div class="page container">
+
+    <!-- 마스트헤드 -->
+    <header class="masthead">
+      <div class="masthead__lines" aria-hidden="true">
+        {Array.from({ length: 6 }).map(() => <span class="ruled-line" />)}
+      </div>
+      <div class="masthead__content">
+        <div class="masthead__meta">
+          <span class="brand-label">carlinis / writing</span>
+          <span class="issue-info">{entries.length} {entries.length === 1 ? 'entry' : 'entries'}</span>
+        </div>
+        <h1>carlinis</h1>
+        <p class="tagline">생각, 회고, 독서, 자기이해를 조용하게 쌓는 글 아카이브.</p>
+      </div>
+    </header>
+
+    <!-- 최신 글 pull quote -->
+    {featured && (
+      <a href={`/writing/${featured.id}`} class="pull-quote">
+        <div class="pull-quote__tape" aria-hidden="true"></div>
+        <blockquote class="pull-quote__text">{featured.data.description}</blockquote>
+        <div class="pull-quote__cite">
+          <span class="pull-quote__title">— {featured.data.title}</span>
+          <time class="pull-quote__date">
+            {featured.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+          </time>
+        </div>
+      </a>
+    )}
+
+    <!-- 목록 -->
+    <section class="entry-list" aria-label="writing list">
+      <div class="list-header">
+        <span class="list-label">All Entries</span>
+        <span class="list-rule" aria-hidden="true"></span>
+        <span class="list-count">{String(entries.length).padStart(3, '0')}</span>
+      </div>
+
+      {entries.map((entry, i) => (
+        <a href={`/writing/${entry.id}`} class="entry-row">
+          <span class="entry-row__num">{String(i + 1).padStart(3, '0')}</span>
+          <div class="entry-row__body">
+            <h2>
+              {entry.data.title}
+              <span class="cursor" aria-hidden="true">▌</span>
+            </h2>
+            <p class="entry-row__desc">{entry.data.description}</p>
+            <div class="entry-row__meta">
+              <time>{entry.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}</time>
+              {entry.data.tags?.map(t => <span class="tag">{t}</span>)}
+            </div>
+          </div>
+        </a>
+      ))}
+
+      {entries.length === 0 && <p class="empty">아직 작성된 글이 없습니다.</p>}
+    </section>
+
+  </div>
+</CarlinisLayout>
+
+<style>
+  /* ── 종이 질감 오버레이 ── */
+  .manuscript-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    /* 원고지 격자 */
+    background-image:
+      linear-gradient(rgba(140, 60, 20, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(140, 60, 20, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* 종이 그레인 노이즈 */
+  .manuscript-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+
+  [data-theme="dark"] .manuscript-bg {
+    background-image:
+      linear-gradient(rgba(200, 90, 40, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200, 90, 40, 0.06) 1px, transparent 1px);
+  }
+
+  [data-theme="dark"] .manuscript-bg::after {
+    opacity: 0.025;
+  }
+
+  /* ── 페이지 ── */
+  .page {
+    position: relative;
+    z-index: 1;
+    padding-top: clamp(3rem, 8vw, 5.5rem);
+    padding-bottom: 7rem;
+    border-left: 2px solid rgba(180, 50, 50, 0.25);
+    padding-left: 2.5rem;
+    /* 그리드가 텍스트에 겹치지 않도록 — 90% 불투명 배경 */
+    background: color-mix(in srgb, var(--bg-0) 90%, transparent);
+  }
+
+  [data-theme="dark"] .page {
+    border-left-color: rgba(200, 70, 70, 0.22);
+  }
+
+  /* ── 마스트헤드 ── */
+  .masthead {
+    position: relative;
+    margin: 0 -2.5rem 0;
+    padding: 2.5rem 2.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--bg-0);
+  }
+
+  /* 수평 줄 — 원고지 줄 노트 느낌 */
+  .masthead__lines {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    pointer-events: none;
+  }
+
+  .ruled-line {
+    display: block;
+    height: 1px;
+    background: rgba(160, 40, 40, 0.10);
+    width: 100%;
+  }
+
+  [data-theme="dark"] .ruled-line {
+    background: rgba(200, 70, 70, 0.08);
+  }
+
+  .masthead__content { position: relative; }
+
+  .masthead__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+  }
+
+  .brand-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(160, 40, 40, 0.7);
+  }
+
+  [data-theme="dark"] .brand-label {
+    color: rgba(210, 80, 80, 0.65);
+  }
+
+  .issue-info {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.06em;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(3.8rem, 12vw, 7.5rem);
+    font-weight: 600;
+    font-style: italic;
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin: 0 0 1.2rem;
+  }
+
+  .tagline {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    margin: 0;
+    letter-spacing: 0.01em;
+    word-break: keep-all;
+  }
+
+  /* ── Pull Quote ── */
+  .pull-quote {
+    display: block;
+    padding: 1.75rem 1.75rem 1.5rem;
+    margin: 2.5rem -2.5rem 0;
+    background: var(--bg-1);
+    border-left: 3px solid rgba(160, 40, 40, 0.45);
+    color: var(--text-primary);
+    text-decoration: none;
+    position: relative;
+    transition: background 0.18s;
+  }
+
+  .pull-quote__tape {
+    position: absolute;
+    top: -9px;
+    left: 2.5rem;
+    width: 52px;
+    height: 17px;
+    background: rgba(160, 40, 40, 0.10);
+    border: 1px solid rgba(160, 40, 40, 0.18);
+    border-radius: 1px;
+  }
+
+  [data-theme="dark"] .pull-quote__tape {
+    background: rgba(210, 80, 80, 0.09);
+    border-color: rgba(210, 80, 80, 0.16);
+  }
+
+  .pull-quote:hover { background: var(--bg-2); }
+
+  .pull-quote__text {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    line-height: 1.85;
+    color: var(--text-secondary);
+    margin: 0 0 1rem;
+    letter-spacing: 0.01em;
+    word-break: keep-all;
+  }
+
+  .pull-quote:hover .pull-quote__text { color: var(--text-primary); }
+
+  .pull-quote__cite {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .pull-quote__title {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--brand-accent);
+    white-space: nowrap;
+  }
+
+  .pull-quote__date {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* ── 목록 헤더 ── */
+  .list-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem 0 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .list-label {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .list-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .list-count {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    color: rgba(160, 40, 40, 0.5);
+    letter-spacing: 0.06em;
+  }
+
+  [data-theme="dark"] .list-count {
+    color: rgba(210, 80, 80, 0.45);
+  }
+
+  /* ── 엔트리 행 ── */
+  .entry-list { display: flex; flex-direction: column; }
+
+  .entry-row {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1rem;
+    align-items: start;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    text-decoration: none;
+    position: relative;
+  }
+
+  .entry-row::before {
+    content: '';
+    position: absolute;
+    left: -2.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(160, 40, 40, 0);
+    transition: background 0.2s;
+  }
+
+  .entry-row:hover::before {
+    background: rgba(160, 40, 40, 0.4);
+  }
+
+  [data-theme="dark"] .entry-row:hover::before {
+    background: rgba(210, 80, 80, 0.35);
+  }
+
+  .entry-row:hover { text-decoration: none; }
+
+  /* 행 번호 */
+  .entry-row__num {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: rgba(160, 40, 40, 0.38);
+    letter-spacing: 0.04em;
+    padding-top: 0.35rem;
+    text-align: right;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  [data-theme="dark"] .entry-row__num {
+    color: rgba(210, 80, 80, 0.3);
+  }
+
+  .entry-row:hover .entry-row__num {
+    color: rgba(160, 40, 40, 0.65);
+  }
+
+  .entry-row__body h2 {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.01em;
+    transition: color 0.18s;
+    word-break: keep-all;
+  }
+
+  .entry-row:hover .entry-row__body h2 {
+    color: var(--brand-accent);
+  }
+
+  [data-theme="dark"] .entry-row:hover .entry-row__body h2 {
+    color: rgba(210, 80, 80, 0.8);
+  }
+
+  /* 타자기 커서 */
+  .cursor {
+    display: inline-block;
+    color: var(--brand-accent);
+    opacity: 0;
+    font-size: 0.85em;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+
+  .entry-row:hover .cursor { opacity: 1; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  .entry-row__desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 0 0 0.6rem;
+    word-break: keep-all;
+  }
+
+  .entry-row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .entry-row__meta time {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 1px 5px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: color 0.18s, border-color 0.18s;
+  }
+
+  .entry-row:hover .tag {
+    color: var(--brand-accent);
+    border-color: var(--brand-accent);
+    opacity: 0.7;
+  }
+
+  .empty {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+  }
+
+  @media (max-width: 520px) {
+    .page { padding-left: 1.25rem; border-left-width: 2px; }
+    .masthead { margin: 0 -1.25rem; padding: 2rem 1.25rem; }
+    .pull-quote { margin: 2rem -1.25rem 0; padding: 1.5rem 1.25rem; }
+    .pull-quote__tape { left: 1.25rem; }
+    .entry-row::before { left: -1.25rem; }
+    .entry-row { grid-template-columns: 2.5rem 1fr; }
+  }
+</style>

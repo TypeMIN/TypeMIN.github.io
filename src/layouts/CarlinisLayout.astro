@@ -1,0 +1,37 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const { title, description, ogImage } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-carlinis">
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap"
+  />
+  <slot />
+</BaseLayout>
+
+<style is:global>
+  /* carlinis: 독서 최적화 — 넉넉한 행간, 본문 강조 */
+  .theme-carlinis .prose {
+    font-size: 1.06rem;
+    line-height: 1.95;
+  }
+
+  .theme-carlinis .prose p {
+    letter-spacing: 0.01em;
+  }
+
+  .theme-carlinis .prose h2 {
+    font-size: 1.25rem;
+    font-weight: 560;
+  }
+</style>

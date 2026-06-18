@@ -1,0 +1,88 @@
+---
+interface Props {
+  href: string;
+  name: string;
+  role: string;
+  description: string;
+  tone: string;
+}
+
+const { href, name, role, description, tone } = Astro.props;
+---
+
+<a href={href} class={`brand-card brand-card--${tone}`}>
+  <div class="brand-card__top">
+    <span class="brand-card__dot"></span>
+    <span class="brand-card__role">{role}</span>
+  </div>
+  <div>
+    <strong>{name}</strong>
+    <p>{description}</p>
+  </div>
+</a>
+
+<style>
+  .brand-card {
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 168px;
+    padding: 1rem 1rem 1rem 0;
+    text-decoration: none;
+    transition: background 0.16s, padding 0.16s;
+  }
+
+  .brand-card:hover {
+    background: var(--bg-1);
+    padding-left: 0.75rem;
+    text-decoration: none;
+  }
+
+  .brand-card__top {
+    align-items: center;
+    display: flex;
+    gap: 0.45rem;
+  }
+
+  .brand-card__dot {
+    background: var(--text-tertiary);
+    border-radius: 999px;
+    height: 0.48rem;
+    width: 0.48rem;
+  }
+
+  .brand-card__role {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    margin-bottom: auto;
+    text-transform: uppercase;
+  }
+
+  .brand-card strong {
+    font-size: 1.28rem;
+    font-weight: 580;
+    line-height: 1.15;
+    margin-top: 1.5rem;
+  }
+
+  .brand-card p {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 0.55rem 0 0;
+  }
+
+  .brand-card--writing .brand-card__dot { background: var(--teal); }
+  .brand-card--photo .brand-card__dot { background: var(--gold); }
+  .brand-card--dev .brand-card__dot { background: var(--cobalt); }
+  .brand-card--music .brand-card__dot { background: var(--crimson); }
+  .brand-card--writing:hover strong { color: var(--teal); }
+  .brand-card--photo:hover strong { color: var(--gold); }
+  .brand-card--dev:hover strong { color: var(--cobalt); }
+  .brand-card--music:hover strong { color: var(--crimson); }
+</style>

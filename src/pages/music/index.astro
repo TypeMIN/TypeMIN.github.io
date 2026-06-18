@@ -1,0 +1,311 @@
+---
+import { getCollection } from 'astro:content';
+import MusicLayout from '../../layouts/MusicLayout.astro';
+
+const entries = (await getCollection('music', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<MusicLayout title="music — TypeMIN" description="곡 단위로 정리하는 음악 기록.">
+  <div class="page container">
+
+    <header class="page-header">
+      <div class="page-header__text">
+        <p class="brand-label">music</p>
+        <h1>music</h1>
+        <p class="page-header__desc">곡, 커버, 연습 기록을 한 트랙씩 정리합니다.</p>
+        <p class="entry-count">{entries.length} tracks</p>
+      </div>
+
+      <!-- 바이닐 LP 데코레이션 -->
+      <div class="vinyl-wrap" aria-hidden="true">
+        <svg class="vinyl" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- 외부 vinyl body -->
+          <circle cx="140" cy="140" r="138" fill="#141414"/>
+          <!-- 그루브 링 -->
+          <circle cx="140" cy="140" r="132" fill="none" stroke="#1d1d1d" stroke-width="1.5"/>
+          <circle cx="140" cy="140" r="125" fill="none" stroke="#191919" stroke-width="2.5"/>
+          <circle cx="140" cy="140" r="118" fill="none" stroke="#1d1d1d" stroke-width="1.5"/>
+          <circle cx="140" cy="140" r="111" fill="none" stroke="#191919" stroke-width="2.5"/>
+          <circle cx="140" cy="140" r="104" fill="none" stroke="#1d1d1d" stroke-width="1.5"/>
+          <circle cx="140" cy="140" r="97"  fill="none" stroke="#191919" stroke-width="2.5"/>
+          <circle cx="140" cy="140" r="90"  fill="none" stroke="#1d1d1d" stroke-width="1.5"/>
+          <circle cx="140" cy="140" r="83"  fill="none" stroke="#191919" stroke-width="2.5"/>
+          <circle cx="140" cy="140" r="76"  fill="none" stroke="#1d1d1d" stroke-width="1.5"/>
+          <!-- 이너 레이블 베이스 -->
+          <circle cx="140" cy="140" r="68"  fill="#0e0e0e"/>
+          <!-- 레이블 원 (크림슨) -->
+          <circle cx="140" cy="140" r="62"  fill="#ad4058"/>
+          <!-- 레이블 데코 링 -->
+          <circle cx="140" cy="140" r="53"  fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="43"  fill="rgba(0,0,0,0.18)"/>
+          <circle cx="140" cy="140" r="34"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <!-- 스핀들 홀 -->
+          <circle cx="140" cy="140" r="4.5" fill="#141414"/>
+        </svg>
+      </div>
+    </header>
+
+    <section class="tracklist" aria-label="track list">
+      <div class="tracklist__head">
+        <span></span>
+        <span class="col-title">title</span>
+        <span class="col-artist">artist</span>
+        <span class="col-date">date</span>
+      </div>
+
+      {entries.map((entry, i) => (
+        <a href={`/music/${entry.id}`} class="track-row">
+          <!-- 앨범 아트 썸네일 -->
+          <div class="track-art">
+            <span class="track-art__num">{String(i + 1).padStart(2, '0')}</span>
+            <span class="track-art__play" aria-hidden="true">
+              <svg viewBox="0 0 12 14" fill="none">
+                <path d="M1 1.5l10 5-10 5V1.5z" fill="currentColor"/>
+              </svg>
+            </span>
+          </div>
+
+          <div class="track-info col-title">
+            <strong>{entry.data.title}</strong>
+            <p>{entry.data.description}</p>
+          </div>
+
+          <span class="track-artist col-artist">{entry.data.artist ?? '—'}</span>
+
+          <time class="track-date col-date" datetime={entry.data.date.toISOString()}>
+            {entry.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+          </time>
+        </a>
+      ))}
+
+      {entries.length === 0 && (
+        <p class="empty">아직 기록된 트랙이 없습니다.</p>
+      )}
+    </section>
+
+  </div>
+</MusicLayout>
+
+<style>
+  .page {
+    padding-top: clamp(3.5rem, 9vw, 6rem);
+    padding-bottom: 7rem;
+  }
+
+  /* ── 헤더 ── */
+  .page-header {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 2rem;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2.5rem;
+    margin-bottom: 0;
+  }
+
+  .brand-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-accent);
+    margin-bottom: 0.8rem;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 640;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin: 0 0 1rem;
+  }
+
+  .page-header__desc {
+    color: var(--text-secondary);
+    font-size: 0.96rem;
+    line-height: 1.8;
+    margin: 0 0 1rem;
+  }
+
+  .entry-count {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.06em;
+  }
+
+  /* ── 바이닐 LP ── */
+  .vinyl-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vinyl {
+    width: 220px;
+    height: 220px;
+    display: block;
+    animation: vinyl-spin 12s linear infinite;
+    filter: drop-shadow(0 4px 20px rgba(173, 64, 88, 0.25));
+  }
+
+  [data-theme="dark"] .vinyl {
+    filter: drop-shadow(0 4px 28px rgba(224, 85, 114, 0.35));
+  }
+
+  @keyframes vinyl-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* 호버 시 스핀 속도 올리기 */
+  .page-header:hover .vinyl {
+    animation-duration: 3s;
+  }
+
+  /* ── 트랙리스트 ── */
+  .tracklist__head {
+    display: grid;
+    grid-template-columns: 52px 1fr 13rem 8rem;
+    gap: 1rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .track-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 13rem 8rem;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.85rem 0.5rem;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 6px;
+    margin: 0 -0.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    position: relative;
+    transition: background 0.18s;
+  }
+
+  .track-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 55%;
+    background: var(--brand-accent);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.2s ease;
+  }
+
+  .track-row:hover {
+    background: var(--bg-1);
+    text-decoration: none;
+  }
+
+  .track-row:hover::before { width: 2px; }
+
+  /* 앨범 아트 썸네일 */
+  .track-art {
+    width: 44px;
+    height: 44px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #2a0a12 0%, #4a1828 50%, #1a0808 100%);
+    border: 1px solid rgba(173, 64, 88, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: border-color 0.18s;
+  }
+
+  .track-row:hover .track-art {
+    border-color: var(--brand-accent);
+  }
+
+  .track-art__num {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand-accent);
+    opacity: 0.7;
+    letter-spacing: 0.03em;
+    transition: opacity 0.15s;
+  }
+
+  .track-art__play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-accent);
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+
+  .track-art__play svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .track-row:hover .track-art__num { opacity: 0; }
+  .track-row:hover .track-art__play { opacity: 1; transform: scale(1); }
+
+  /* 트랙 정보 */
+  .track-info strong {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 520;
+    margin-bottom: 0.2rem;
+    transition: color 0.18s;
+  }
+
+  .track-row:hover .track-info strong { color: var(--brand-accent); }
+
+  .track-info p {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .track-artist {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    transition: color 0.18s;
+  }
+
+  .track-row:hover .track-artist { color: var(--text-primary); }
+
+  .track-date {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    text-align: right;
+    letter-spacing: 0.02em;
+  }
+
+  .empty {
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+  }
+
+  @media (max-width: 760px) {
+    .page-header { grid-template-columns: 1fr; }
+    .vinyl-wrap { display: none; }
+    .tracklist__head,
+    .track-row { grid-template-columns: 52px 1fr; }
+    .col-artist, .col-date { display: none; }
+  }
+</style>

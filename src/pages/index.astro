@@ -1,89 +1,397 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Hero from '../components/Hero.astro';
-import PostCard from '../components/PostCard.astro';
+import TypeminLayout from '../layouts/TypeminLayout.astro';
 
-const allPosts = await getCollection('posts', ({ data }) => !data.draft);
-const recentPosts = allPosts
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, 4);
+const visible = ({ data }: { data: { draft?: boolean } }) => !data.draft;
+const byDate = (a: { data: { date: Date } }, b: { data: { date: Date } }) =>
+  b.data.date.valueOf() - a.data.date.valueOf();
 
-const subBrands = [
-  { key: 'dev',     label: 'Dev',     desc: '개발 공부, 코드, 프로젝트',   href: '/posts?cat=dev',     color: 'cobalt' },
-  { key: 'photo',   label: 'Photo',   desc: '카메라를 들고 담은 순간들',    href: '/posts?cat=photo',   color: 'gold'   },
-  { key: 'music',   label: 'Music',   desc: '만들고 듣는 음악 이야기',      href: '/posts?cat=music',   color: 'crimson'},
-  { key: 'writing', label: 'Writing', desc: '생각, 에세이, 독서 기록',      href: '/posts?cat=writing', color: 'teal'   },
+const [writing, photo, dev, music] = await Promise.all([
+  getCollection('writing', visible),
+  getCollection('photo', visible),
+  getCollection('dev', visible),
+  getCollection('music', visible),
+]);
+
+const brands = [
+  {
+    href: '/writing',
+    name: 'carlinis',
+    label: 'writing',
+    description: '글, 사유, 회고, 독서 기록.',
+    accent: 'teal',
+    count: writing.length,
+  },
+  {
+    href: '/photo',
+    name: 'kine.miles',
+    label: 'photo',
+    description: '시리즈 단위의 사진 아카이브.',
+    accent: 'gold',
+    count: photo.length,
+  },
+  {
+    href: '/dev',
+    name: 'dev',
+    label: 'development',
+    description: '개발, 자동화, 실험 기록.',
+    accent: 'cobalt',
+    count: dev.length,
+  },
+  {
+    href: '/music',
+    name: 'music',
+    label: 'music',
+    description: '곡 단위의 음악 기록.',
+    accent: 'crimson',
+    count: music.length,
+  },
 ];
+
+const recent = [
+  ...writing.map(e => ({ href: `/writing/${e.id}`, title: e.data.title, label: 'writing', date: e.data.date, accent: 'teal' })),
+  ...photo.map(e =>   ({ href: `/photo/${e.id}`,   title: e.data.title, label: 'photo',   date: e.data.date, accent: 'gold' })),
+  ...dev.map(e =>     ({ href: `/dev/${e.id}`,      title: e.data.title, label: 'dev',     date: e.data.date, accent: 'cobalt' })),
+  ...music.map(e =>   ({ href: `/music/${e.id}`,    title: e.data.title, label: 'music',   date: e.data.date, accent: 'crimson' })),
+].sort((a, b) => b.date.valueOf() - a.date.valueOf()).slice(0, 6);
 ---
 
-<BaseLayout title="TypeMIN — 만들고, 기록하고, 탐색합니다.">
-  <div class="container">
-    <Hero />
+<TypeminLayout title="TypeMIN" description="이민식의 개인 아카이브">
+  <div class="home">
 
-    {recentPosts.length > 0 && (
-      <section class="section">
-        <div class="section__header">
-          <p class="section-label">최근 글</p>
-          <a href="/posts" class="section__more">전체 보기 →</a>
+    <!-- ── INTRO ── -->
+    <section class="intro container container--wide">
+      <div class="intro__left">
+        <p class="kicker">Personal Archive</p>
+        <h1>이민식의<br/>작업과 기록을<br/>조용히 정리하는 곳.</h1>
+      </div>
+      <div class="intro__right">
+        <p>글, 사진, 개발, 음악을 각자의 형식에 맞게 분리해 둡니다. 포트폴리오보다 아카이브에 가깝습니다.</p>
+        <div class="intro__meta">
+          <span>Seoul, KR</span>
+          <span>·</span>
+          <span>{new Date().getFullYear()}</span>
         </div>
-        <div class="post-grid">
-          {recentPosts.map(post => (
-            <PostCard
-              slug={post.id}
-              title={post.data.title}
-              description={post.data.description}
-              pubDate={post.data.pubDate}
-              category={post.data.category}
-              body={post.body}
-            />
-          ))}
-        </div>
-      </section>
-    )}
+      </div>
+    </section>
 
-    <section class="section">
-      <p class="section-label">탐색 중인 분야</p>
-      <div class="brand-grid">
-        {subBrands.map(b => (
-          <a href={b.href} class={`brand-card brand-card--${b.color}`}>
-            <div class={`brand-card__label badge badge--${b.key}`}>{b.label}</div>
-            <p class="brand-card__desc">{b.desc}</p>
+    <!-- ── BRAND MAP ── -->
+    <section class="brands container container--wide" aria-label="brand spaces">
+      <p class="section-kicker">Spaces</p>
+      <div class="brand-row">
+        {brands.map(b => (
+          <a href={b.href} class={`brand-col brand-col--${b.accent}`}>
+            <span class="brand-col__label">{b.label}</span>
+            <strong class="brand-col__name">{b.name}</strong>
+            <p class="brand-col__desc">{b.description}</p>
+            <span class="brand-col__count">{b.count} {b.count === 1 ? 'entry' : 'entries'}</span>
           </a>
         ))}
       </div>
     </section>
+
+    <!-- ── RECENT ── -->
+    <section class="recent container container--wide" aria-label="recent records">
+      <p class="section-kicker">Recent</p>
+      <div class="recent-list">
+        {recent.map((item, i) => (
+          <a href={item.href} class={`recent-row recent-row--${item.accent}`}>
+            <span class="recent-row__idx">{String(i + 1).padStart(2, '0')}</span>
+            <span class="recent-row__title">{item.title}</span>
+            <span class="recent-row__label">{item.label}</span>
+            <time class="recent-row__date" datetime={item.date.toISOString()}>
+              {item.date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+            </time>
+          </a>
+        ))}
+      </div>
+    </section>
+
   </div>
-</BaseLayout>
+</TypeminLayout>
 
 <style>
-  .section { margin-bottom: 3.5rem; }
-  .section__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .section__more { font-size: 0.8rem; color: var(--cobalt-light); }
+  .home {
+    padding-bottom: 8rem;
+  }
 
-  .post-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  /* ── INTRO ── */
+  .intro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: end;
+    padding-top: clamp(4rem, 10vw, 8rem);
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+    border-bottom: 1px solid var(--border);
+  }
 
-  .brand-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+  .kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 1.5rem;
+  }
 
-  @media (max-width: 480px) { .brand-grid { grid-template-columns: 1fr; } }
+  .intro h1 {
+    font-size: clamp(2.4rem, 5.5vw, 4.6rem);
+    font-weight: 640;
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+  }
 
-  .brand-card {
-    padding: 1.1rem 1.25rem;
-    border-radius: 10px;
-    border: 0.5px solid var(--border);
-    background: var(--bg-1);
+  .intro__right {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    text-decoration: none;
-    transition: border-color 0.15s, background 0.15s;
+    justify-content: flex-end;
+    gap: 2rem;
+    padding-bottom: 0.2rem;
   }
-  .brand-card:hover { background: var(--bg-2); text-decoration: none; }
-  .brand-card--cobalt:hover  { border-color: var(--cobalt-light); }
-  .brand-card--gold:hover    { border-color: var(--gold-light); }
-  .brand-card--crimson:hover { border-color: var(--crimson-light); }
-  .brand-card--teal:hover    { border-color: var(--teal-light); }
 
-  .brand-card__label { align-self: flex-start; }
-  .brand-card__desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+  .intro__right > p {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--text-secondary);
+    max-width: 30rem;
+  }
+
+  .intro__meta {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── SECTION KICKER ── */
+  .section-kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── BRANDS ── */
+  .brands {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 1.75rem 1.5rem 1.5rem;
+    border-right: 1px solid var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.22s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brand-col:last-child { border-right: none; }
+
+  /* 상단 액센트 바 */
+  .brand-col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    transition: height 0.25s ease;
+  }
+
+  .brand-col--teal::before    { background: var(--teal); }
+  .brand-col--gold::before    { background: var(--gold); }
+  .brand-col--cobalt::before  { background: var(--cobalt); }
+  .brand-col--crimson::before { background: var(--crimson); }
+
+  .brand-col:hover {
+    text-decoration: none;
+  }
+
+  .brand-col--teal:hover    { background: var(--teal-dim); }
+  .brand-col--gold:hover    { background: var(--gold-dim); }
+  .brand-col--cobalt:hover  { background: var(--cobalt-dim); }
+  .brand-col--crimson:hover { background: var(--crimson-dim); }
+
+  .brand-col:hover::before { height: 3px; }
+
+  .brand-col__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.4rem;
+    transition: color 0.22s;
+  }
+
+  .brand-col--teal .brand-col__label    { color: var(--teal); }
+  .brand-col--gold .brand-col__label    { color: var(--gold); }
+  .brand-col--cobalt .brand-col__label  { color: var(--cobalt); }
+  .brand-col--crimson .brand-col__label { color: var(--crimson); }
+
+  .brand-col__name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.2;
+    display: block;
+    margin-bottom: 0.65rem;
+    transition: transform 0.22s ease;
+  }
+
+  .brand-col:hover .brand-col__name {
+    transform: translateY(-2px);
+  }
+
+  .brand-col__desc {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    flex: 1;
+    margin: 0;
+  }
+
+  .brand-col__count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 1.5rem;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── RECENT ── */
+  .recent {
+    padding-top: 4rem;
+  }
+
+  .recent-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .recent-row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr 7rem 9rem;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 0 -0.75rem;
+    position: relative;
+    transition: background 0.18s ease;
+  }
+
+  /* 왼쪽 액센트 바 */
+  .recent-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 60%;
+    border-radius: 0 2px 2px 0;
+    transition: width 0.2s ease;
+  }
+
+  .recent-row--teal::before    { background: var(--teal); }
+  .recent-row--gold::before    { background: var(--gold); }
+  .recent-row--cobalt::before  { background: var(--cobalt); }
+  .recent-row--crimson::before { background: var(--crimson); }
+
+  .recent-row:hover {
+    text-decoration: none;
+    background: var(--bg-1);
+  }
+
+  .recent-row:hover::before { width: 3px; }
+
+  .recent-row__idx {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+
+  .recent-row__title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.18s;
+  }
+
+  .recent-row--teal:hover .recent-row__title    { color: var(--teal); }
+  .recent-row--gold:hover .recent-row__title    { color: var(--gold); }
+  .recent-row--cobalt:hover .recent-row__title  { color: var(--cobalt); }
+  .recent-row--crimson:hover .recent-row__title { color: var(--crimson); }
+
+  .recent-row__label {
+    font-size: 0.74rem;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+  }
+
+  .recent-row__date {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    text-align: right;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 860px) {
+    .intro {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .brand-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .brand-col:nth-child(2) { border-right: none; }
+    .brand-col:nth-child(3) { border-right: 1px solid var(--border); border-top: 1px solid var(--border); }
+    .brand-col:nth-child(4) { border-right: none; border-top: 1px solid var(--border); }
+
+    .recent-row {
+      grid-template-columns: 2.5rem 1fr 9rem;
+    }
+
+    .recent-row__label { display: none; }
+  }
+
+  @media (max-width: 560px) {
+    .brand-row { grid-template-columns: 1fr; }
+    .brand-col { border-right: none; border-bottom: 1px solid var(--border); }
+    .brand-col:last-child { border-bottom: none; }
+    .brand-col:nth-child(n) { border-top: none; border-right: none; }
+
+    .recent-row {
+      grid-template-columns: 2.5rem 1fr;
+    }
+    .recent-row__date { display: none; }
+  }
 </style>
