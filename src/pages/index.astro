@@ -233,27 +233,28 @@ const recent = [
   .brand-col:hover::before { height: 3px; }
 
   .brand-col__label {
-    font-size: 0.68rem;
-    font-weight: 700;
+    font-size: 0.62rem;
+    font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 1.4rem;
+    color: var(--text-tertiary);
+    margin-bottom: 0.75rem;
     transition: color 0.22s;
   }
 
-  .brand-col--teal .brand-col__label    { color: var(--teal); }
-  .brand-col--gold .brand-col__label    { color: var(--gold); }
-  .brand-col--cobalt .brand-col__label  { color: var(--cobalt); }
-  .brand-col--crimson .brand-col__label { color: var(--crimson); }
-
   .brand-col__name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    line-height: 1.2;
+    font-size: 1.45rem;
+    font-weight: 660;
+    line-height: 1.15;
     display: block;
-    margin-bottom: 0.65rem;
-    transition: transform 0.22s ease;
+    margin-bottom: 0.75rem;
+    transition: color 0.22s ease, transform 0.22s ease;
   }
+
+  .brand-col--teal .brand-col__name    { color: var(--teal); }
+  .brand-col--gold .brand-col__name    { color: var(--gold); }
+  .brand-col--cobalt .brand-col__name  { color: var(--cobalt); }
+  .brand-col--crimson .brand-col__name { color: var(--crimson); }
 
   .brand-col:hover .brand-col__name {
     transform: translateY(-2px);
