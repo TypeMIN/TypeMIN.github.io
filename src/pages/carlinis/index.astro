@@ -30,7 +30,7 @@ const featured = entries[0] ?? null;
 
     <!-- 최신 글 pull quote -->
     {featured && (
-      <a href={`/writing/${featured.id}`} class="pull-quote">
+      <a href={`/carlinis/${featured.id}`} class="pull-quote">
         <div class="pull-quote__tape" aria-hidden="true"></div>
         <blockquote class="pull-quote__text">{featured.data.description}</blockquote>
         <div class="pull-quote__cite">
@@ -51,7 +51,7 @@ const featured = entries[0] ?? null;
       </div>
 
       {entries.map((entry, i) => (
-        <a href={`/writing/${entry.id}`} class="entry-row">
+        <a href={`/carlinis/${entry.id}`} class="entry-row">
           <span class="entry-row__num">{String(i + 1).padStart(3, '0')}</span>
           <div class="entry-row__body">
             <h2>

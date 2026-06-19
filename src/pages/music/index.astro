@@ -14,7 +14,7 @@ const entries = (await getCollection('music', ({ data }) => !data.draft))
         <p class="brand-label">music</p>
         <h1>music</h1>
         <p class="page-header__desc">곡, 커버, 연습 기록을 한 트랙씩 정리합니다.</p>
-        <p class="entry-count">{entries.length} tracks</p>
+        <p class="entry-count">{entries.length} {entries.length === 1 ? 'track' : 'tracks'}</p>
       </div>
 
       <!-- 바이닐 LP 데코레이션 -->

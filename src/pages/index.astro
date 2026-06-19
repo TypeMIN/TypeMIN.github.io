@@ -15,7 +15,7 @@ const [writing, photo, dev, music] = await Promise.all([
 
 const brands = [
   {
-    href: '/writing',
+    href: '/carlinis',
     name: 'carlinis',
     label: 'writing',
     description: '글, 사유, 회고, 독서 기록.',
@@ -23,7 +23,7 @@ const brands = [
     count: writing.length,
   },
   {
-    href: '/photo',
+    href: '/kine.miles',
     name: 'kine.miles',
     label: 'photo',
     description: '시리즈 단위의 사진 아카이브.',
@@ -49,8 +49,8 @@ const brands = [
 ];
 
 const recent = [
-  ...writing.map(e => ({ href: `/writing/${e.id}`, title: e.data.title, label: 'writing', date: e.data.date, accent: 'teal' })),
-  ...photo.map(e =>   ({ href: `/photo/${e.id}`,   title: e.data.title, label: 'photo',   date: e.data.date, accent: 'gold' })),
+  ...writing.map(e => ({ href: `/carlinis/${e.id}`,  title: e.data.title, label: 'carlinis',   date: e.data.date, accent: 'teal' })),
+  ...photo.map(e =>   ({ href: `/kine.miles/${e.id}`, title: e.data.title, label: 'kine.miles', date: e.data.date, accent: 'gold' })),
   ...dev.map(e =>     ({ href: `/dev/${e.id}`,      title: e.data.title, label: 'dev',     date: e.data.date, accent: 'cobalt' })),
   ...music.map(e =>   ({ href: `/music/${e.id}`,    title: e.data.title, label: 'music',   date: e.data.date, accent: 'crimson' })),
 ].sort((a, b) => b.date.valueOf() - a.date.valueOf()).slice(0, 6);
