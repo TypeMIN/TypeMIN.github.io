@@ -448,10 +448,6 @@ const currentPath = Astro.url.pathname;
           <>
             <a href="/" class="nav__logo">TypeMIN</a>
             <div class="nav__links">
-              <a href="/writing" class={`nav__link${currentPath.startsWith('/writing') ? ' active' : ''}`}>writing</a>
-              <a href="/photo"   class={`nav__link${currentPath.startsWith('/photo')   ? ' active' : ''}`}>photo</a>
-              <a href="/dev"     class={`nav__link${currentPath.startsWith('/dev')     ? ' active' : ''}`}>dev</a>
-              <a href="/music"   class={`nav__link${currentPath.startsWith('/music')   ? ' active' : ''}`}>music</a>
               <a href="/about"   class={`nav__link${currentPath === '/about/' || currentPath === '/about' ? ' active' : ''}`}>about</a>
               <button class="theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
                 <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
