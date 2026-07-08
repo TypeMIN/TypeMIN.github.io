@@ -5,12 +5,13 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  hideNav?: boolean;
 }
 
-const { title, description, ogImage } = Astro.props;
+const { title, description, ogImage, hideNav = false } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-typemin" navMode="main">
+<BaseLayout title={title} description={description} ogImage={ogImage} brandClass="theme-typemin" navMode="main" hideNav={hideNav}>
   <slot />
 </BaseLayout>
 

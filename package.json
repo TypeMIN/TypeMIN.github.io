@@ -6,7 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "setup:supabase": "bash scripts/setup-worldcup-supabase.sh",
+    "setup:football-api": "bash scripts/set-football-data-token.sh"
   },
   "dependencies": {
     "@astrojs/mdx": "^6.0.1",

@@ -1,0 +1,2274 @@
+---
+import TypeminLayout from '../layouts/TypeminLayout.astro';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<TypeminLayout
+  title="월드컵 예측 내기"
+  description="5명이 함께 쓰는 월드컵 8강 이후 예측 내기 보드"
+  hideNav={true}
+>
+  <section
+    class="bet-app"
+    data-bet-app
+    data-supabase-url={supabaseUrl}
+    data-supabase-anon-key={supabaseAnonKey}
+  >
+    <button type="button" class="theme-toggle wc-theme-toggle" id="theme-toggle" aria-label="라이트/다크 전환">
+      <svg class="icon--sun" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="8" cy="8" r="3" fill="currentColor"/>
+        <line x1="8" y1="1" x2="8" y2="3"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="1" y1="8" x2="3" y2="8"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="13" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="3.05" y1="3.05" x2="4.46" y2="4.46" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="11.54" y1="11.54" x2="12.95" y2="12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="3.05" y1="12.95" x2="4.46" y2="11.54" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="11.54" y1="4.46" x2="12.95" y2="3.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <svg class="icon--moon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.64-.48A6.5 6.5 0 1 0 14.12 10.6a.5.5 0 0 0-.62-.6z" fill="currentColor"/>
+      </svg>
+    </button>
+    <header class="hero container container--wide">
+      <div>
+        <h1>월드컵 예측 내기</h1>
+      </div>
+    </header>
+
+    <div class="container container--wide app-stack">
+      <section class="tool-block login-tool">
+        <div class="block-heading">
+          <h2>로그인</h2>
+          <span>이름 + 4자리 PIN</span>
+        </div>
+        <div class="login-box" data-login-box></div>
+        <p class="save-note" data-save-note>브라우저에 자동 저장됩니다.</p>
+      </section>
+      <div data-admin-participants></div>
+
+      <section class="scoreboard" aria-label="점수판">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Leaderboard</p>
+            <h2>점수판</h2>
+          </div>
+          <p>끝난 경기만 점수에 반영됩니다. 꼴찌는 최저점 전체가 표시됩니다.</p>
+        </div>
+        <div class="score-graph" data-score-graph></div>
+      </section>
+
+      <section class="prediction-board" aria-label="예측">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Predictions</p>
+            <h2>예측</h2>
+          </div>
+          <p>경기 시작 전까지 본인 예측만 수정할 수 있고, 다른 사람의 선택은 경기 종료 후 공개됩니다.</p>
+        </div>
+        <div class="rounds" data-rounds></div>
+      </section>
+
+      <div class="private-panels" data-private-panels></div>
+      <p class="api-credit">Football data provided by the Football-Data.org API.</p>
+    </div>
+  </section>
+</TypeminLayout>
+
+<script is:inline>
+  (() => {
+    const storageKey = 'typemin-worldcup-bet-v1';
+    const sessionKey = 'typemin-worldcup-session-v1';
+    const app = document.querySelector('[data-bet-app]');
+    if (!app) return;
+
+    const backend = {
+      enabled: Boolean(app.dataset.supabaseUrl && app.dataset.supabaseAnonKey),
+      client: null,
+      setupTimer: null,
+      refreshTimer: null,
+      footballTimer: null,
+      footballSyncing: false,
+    };
+
+    const stageScores = {
+      r32: { regular: 1, final: 1 },
+      r16: { regular: 1, final: 1 },
+      qf: { regular: 2, final: 1 },
+      sf: { regular: 4, final: 2 },
+      third: { regular: 4, final: 2 },
+      final: { regular: 6, final: 3 },
+    };
+    const stageOrder = ['r32', 'r16', 'qf', 'sf', 'third', 'final'];
+    const stageLabels = {
+      r32: '32강',
+      r16: '16강',
+      qf: '8강',
+      sf: '4강',
+      third: '3·4위전',
+      final: '결승',
+    };
+    const SYNC_PRE_WINDOW_MS = 60 * 60 * 1000;
+    const SYNC_MATCH_DURATION_MS = 150 * 60 * 1000;
+    const SYNC_POST_CAP_MS = 6 * 60 * 60 * 1000;
+
+    const defaultState = {
+      participants: ['빈 자리 1', '빈 자리 2', '빈 자리 3', '빈 자리 4', '빈 자리 5'],
+      participantIds: [],
+      pins: ['', '', '', '', ''],
+      registered: [false, false, false, false, false],
+      matches: [
+        { id: 'r32_1', stage: 'r32', label: '32강 1경기', teamA: '팀 1', teamB: '팀 2', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_2', stage: 'r32', label: '32강 2경기', teamA: '팀 3', teamB: '팀 4', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_3', stage: 'r32', label: '32강 3경기', teamA: '팀 5', teamB: '팀 6', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_4', stage: 'r32', label: '32강 4경기', teamA: '팀 7', teamB: '팀 8', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_5', stage: 'r32', label: '32강 5경기', teamA: '팀 9', teamB: '팀 10', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_6', stage: 'r32', label: '32강 6경기', teamA: '팀 11', teamB: '팀 12', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_7', stage: 'r32', label: '32강 7경기', teamA: '팀 13', teamB: '팀 14', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_8', stage: 'r32', label: '32강 8경기', teamA: '팀 15', teamB: '팀 16', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_9', stage: 'r32', label: '32강 9경기', teamA: '팀 17', teamB: '팀 18', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_10', stage: 'r32', label: '32강 10경기', teamA: '팀 19', teamB: '팀 20', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_11', stage: 'r32', label: '32강 11경기', teamA: '팀 21', teamB: '팀 22', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_12', stage: 'r32', label: '32강 12경기', teamA: '팀 23', teamB: '팀 24', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_13', stage: 'r32', label: '32강 13경기', teamA: '팀 25', teamB: '팀 26', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_14', stage: 'r32', label: '32강 14경기', teamA: '팀 27', teamB: '팀 28', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_15', stage: 'r32', label: '32강 15경기', teamA: '팀 29', teamB: '팀 30', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r32_16', stage: 'r32', label: '32강 16경기', teamA: '팀 31', teamB: '팀 32', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_1', stage: 'r16', label: '16강 1경기', teamA: '팀 A', teamB: '팀 B', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_2', stage: 'r16', label: '16강 2경기', teamA: '팀 C', teamB: '팀 D', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_3', stage: 'r16', label: '16강 3경기', teamA: '팀 E', teamB: '팀 F', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_4', stage: 'r16', label: '16강 4경기', teamA: '팀 G', teamB: '팀 H', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_5', stage: 'r16', label: '16강 5경기', teamA: '팀 I', teamB: '팀 J', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_6', stage: 'r16', label: '16강 6경기', teamA: '팀 K', teamB: '팀 L', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_7', stage: 'r16', label: '16강 7경기', teamA: '팀 M', teamB: '팀 N', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'r16_8', stage: 'r16', label: '16강 8경기', teamA: '팀 O', teamB: '팀 P', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'qf1', stage: 'qf', label: '8강 1경기', teamA: '프랑스', teamB: '상대팀', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'qf2', stage: 'qf', label: '8강 2경기', teamA: '팀 A', teamB: '팀 B', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'qf3', stage: 'qf', label: '8강 3경기', teamA: '팀 C', teamB: '팀 D', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'qf4', stage: 'qf', label: '8강 4경기', teamA: '팀 E', teamB: '팀 F', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'sf1', stage: 'sf', label: '4강 1경기', teamA: '팀 G', teamB: '팀 H', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'sf2', stage: 'sf', label: '4강 2경기', teamA: '팀 I', teamB: '팀 J', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'third', stage: 'third', label: '3·4위전', teamA: '팀 K', teamB: '팀 L', kickoff: '', externalId: '', crestA: '', crestB: '' },
+        { id: 'final', stage: 'final', label: '결승', teamA: '팀 M', teamB: '팀 N', kickoff: '', externalId: '', crestA: '', crestB: '' },
+      ],
+      predictions: {},
+      results: {},
+      api: {
+        lastSync: '',
+        lastMessage: '',
+      },
+    };
+
+    let state = loadState();
+    let session = loadSession();
+    let selectedStage = null;
+
+    const els = {
+      loginBox: app.querySelector('[data-login-box]'),
+      adminParticipants: app.querySelector('[data-admin-participants]'),
+      participantFields: app.querySelector('[data-participant-fields]'),
+      privatePanels: app.querySelector('[data-private-panels]'),
+      matchFields: null,
+      resultFields: null,
+      rounds: app.querySelector('[data-rounds]'),
+      saveNote: app.querySelector('[data-save-note]'),
+      scoreGraph: app.querySelector('[data-score-graph]'),
+      apiPanel: null,
+    };
+
+    function loadState() {
+      const hashState = decodeHashState();
+      if (hashState) return normalizeState(hashState);
+
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) return normalizeState(JSON.parse(saved));
+      } catch {
+        localStorage.removeItem(storageKey);
+      }
+
+      return structuredClone(defaultState);
+    }
+
+    function normalizeState(nextState) {
+      const clean = structuredClone(defaultState);
+
+      if (Array.isArray(nextState.participants)) {
+        clean.participants = clean.participants.map((fallback, index) =>
+          String(nextState.participants[index] || fallback).trim() || fallback
+        );
+      }
+
+      if (Array.isArray(nextState.pins)) {
+        clean.pins = clean.pins.map((fallback, index) =>
+          String(nextState.pins[index] || fallback).replace(/\D/g, '') || fallback
+        );
+      }
+
+      if (Array.isArray(nextState.registered)) {
+        clean.registered = clean.registered.map((fallback, index) =>
+          Boolean(nextState.registered[index] ?? fallback)
+        );
+      }
+
+      if (Array.isArray(nextState.matches)) {
+        const savedById = new Map(nextState.matches.map((match) => [match?.id, match]));
+        clean.matches = clean.matches.map((match, index) => {
+          const indexed = nextState.matches[index];
+          const saved = savedById.get(match.id) || (indexed?.id ? {} : indexed) || {};
+          return {
+            ...match,
+            teamA: String(saved.teamA || match.teamA),
+            teamB: String(saved.teamB || match.teamB),
+            kickoff: String(saved.kickoff || ''),
+            externalId: String(saved.externalId || ''),
+            crestA: String(saved.crestA || match.crestA || ''),
+            crestB: String(saved.crestB || match.crestB || ''),
+          };
+        });
+      }
+
+      clean.predictions = isRecord(nextState.predictions) ? nextState.predictions : {};
+      clean.results = isRecord(nextState.results) ? nextState.results : {};
+      return clean;
+    }
+
+    function loadSession() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(sessionKey) || 'null');
+        if (saved?.role === 'admin') {
+          return {
+            role: 'admin',
+            participantIndex: null,
+            participantId: null,
+            pin: '',
+            adminPin: String(saved.adminPin || ''),
+          };
+        }
+        if (saved?.role === 'participant' && Number.isInteger(saved.participantIndex)) {
+          return {
+            role: 'participant',
+            participantIndex: saved.participantIndex,
+            participantId: saved.participantId || null,
+            pin: String(saved.pin || ''),
+            adminPin: '',
+          };
+        }
+      } catch {
+        localStorage.removeItem(sessionKey);
+      }
+      return { role: null, participantIndex: null, participantId: null, pin: '', adminPin: '' };
+    }
+
+    function saveSession() {
+      if (!session.role) localStorage.removeItem(sessionKey);
+      else localStorage.setItem(sessionKey, JSON.stringify(session));
+    }
+
+    function isAdmin() {
+      return session.role === 'admin';
+    }
+
+    function isParticipant(index) {
+      return session.role === 'participant' && session.participantIndex === index;
+    }
+
+    function getActiveParticipantIndexes() {
+      return state.participants
+        .map((_, index) => index)
+        .filter(index => state.registered[index]);
+    }
+
+    function joinLocalParticipant(name, pin) {
+      const cleanName = name.trim();
+      if (!cleanName) {
+        els.saveNote.textContent = '이름을 입력해 주세요.';
+        return;
+      }
+
+      if (!/^\d{4}$/.test(pin)) {
+        els.saveNote.textContent = 'PIN은 4자리 숫자로 입력해 주세요.';
+        return;
+      }
+
+      const existingIndex = state.participants.findIndex((participantName, index) =>
+        state.registered[index] && participantName === cleanName
+      );
+
+      if (existingIndex >= 0) {
+        if (state.pins[existingIndex] !== pin) {
+          els.saveNote.textContent = '이미 등록된 이름입니다. PIN을 확인해 주세요.';
+          return;
+        }
+
+        session = { role: 'participant', participantIndex: existingIndex, participantId: null, pin, adminPin: '' };
+        saveSession();
+        saveState(`${cleanName}님으로 로그인했습니다.`);
+        render();
+        return;
+      }
+
+      const emptyIndex = state.registered.findIndex(registered => !registered);
+      if (emptyIndex < 0) {
+        els.saveNote.textContent = '참가 인원이 이미 5명입니다.';
+        return;
+      }
+
+      state.participants[emptyIndex] = cleanName;
+      state.pins[emptyIndex] = pin;
+      state.registered[emptyIndex] = true;
+      session = { role: 'participant', participantIndex: emptyIndex, participantId: null, pin, adminPin: '' };
+      saveSession();
+      saveState(`${cleanName}님으로 참가했습니다.`);
+      render();
+    }
+
+    function isRecord(value) {
+      return value && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    function saveState(message = '저장되었습니다.') {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      els.saveNote.textContent = message;
+      clearTimeout(saveState.timer);
+      saveState.timer = setTimeout(() => {
+        els.saveNote.textContent = backend.enabled
+          ? 'Supabase에 연결되면 원격 DB에 저장됩니다.'
+          : '브라우저에 자동 저장됩니다.';
+      }, 1800);
+    }
+
+    async function initBackend() {
+      if (!backend.enabled) {
+        render();
+        return;
+      }
+
+      try {
+        const module = await import('https://esm.sh/@supabase/supabase-js@2');
+        backend.client = module.createClient(app.dataset.supabaseUrl, app.dataset.supabaseAnonKey);
+        await refreshBackendState('Supabase에 연결했습니다.');
+        subscribeBackendEvents();
+        syncFootballData({ silent: true }).catch((error) => {
+          console.error(error);
+          state.api.lastMessage = '경기 정보 자동 확인 실패';
+          renderApiPanel();
+        }).finally(() => {
+          scheduleFootballSync();
+        });
+      } catch (error) {
+        console.error(error);
+        backend.enabled = false;
+        els.saveNote.textContent = 'Supabase 연결에 실패해 로컬 모드로 실행합니다.';
+        render();
+      }
+    }
+
+    function backendViewerArgs() {
+      if (session.role === 'participant' && session.participantId && session.pin) {
+        return {
+          p_participant_id: session.participantId,
+          p_pin: session.pin,
+        };
+      }
+      return {
+        p_participant_id: null,
+        p_pin: null,
+      };
+    }
+
+    async function refreshBackendState(message) {
+      if (!backend.client) return;
+
+      const rpcName = session.role === 'admin' && session.adminPin
+        ? 'worldcup_admin_state'
+        : 'worldcup_public_state';
+      const args = rpcName === 'worldcup_admin_state'
+        ? { p_admin_pin: session.adminPin }
+        : backendViewerArgs();
+
+      const { data, error } = await backend.client.rpc(rpcName, args);
+      if (error) throw error;
+
+      state = mergeRemoteState(data);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      if (message) saveState(message);
+    }
+
+    function mergeRemoteState(remote) {
+      const next = structuredClone(defaultState);
+
+      if (Array.isArray(remote?.participants)) {
+        remote.participants.forEach((participant) => {
+          const index = Number(participant.slot) - 1;
+          if (index < 0 || index >= next.participants.length) return;
+          next.participants[index] = String(participant.name || next.participants[index]);
+          next.registered[index] = Boolean(participant.registered);
+          next.participantIds = next.participantIds || [];
+          next.participantIds[index] = participant.id;
+        });
+      }
+
+      if (Array.isArray(remote?.matches)) {
+        next.matches = next.matches.map((fallback) => {
+          const found = remote.matches.find((match) => match.id === fallback.id);
+          if (!found) return fallback;
+          return {
+            ...fallback,
+            teamA: String(found.teamA || fallback.teamA),
+            teamB: String(found.teamB || fallback.teamB),
+            kickoff: String(found.kickoff || ''),
+            externalId: String(found.externalId || ''),
+            crestA: String(found.crestA || ''),
+            crestB: String(found.crestB || ''),
+          };
+        });
+
+        next.results = {};
+        remote.matches.forEach((match) => {
+          if (match.result) next.results[match.id] = match.result;
+        });
+      }
+
+      next.predictions = {};
+      if (isRecord(remote?.predictions)) {
+        Object.entries(remote.predictions).forEach(([slot, matchMap]) => {
+          const index = Number(slot) - 1;
+          if (index < 0 || !isRecord(matchMap)) return;
+          next.predictions[index] = matchMap;
+        });
+      }
+
+      if (isRecord(remote?.api)) {
+        next.api.lastSync = String(remote.api.lastSync || '');
+        next.api.lastMessage = String(remote.api.lastMessage || '');
+      }
+
+      return next;
+    }
+
+    function subscribeBackendEvents() {
+      if (!backend.client) return;
+
+      backend.client
+        .channel('worldcup-events')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'worldcup_events' },
+          () => {
+            clearTimeout(backend.refreshTimer);
+            backend.refreshTimer = setTimeout(() => {
+              refreshBackendState().catch((error) => {
+                console.error(error);
+                els.saveNote.textContent = '원격 변경사항을 불러오지 못했습니다.';
+              });
+            }, 250);
+          }
+        )
+        .subscribe();
+    }
+
+    function queueBackendSetupSave() {
+      if (!backend.enabled || !backend.client) return;
+      clearTimeout(backend.setupTimer);
+      backend.setupTimer = setTimeout(() => {
+        saveBackendSetup().catch((error) => {
+          console.error(error);
+          els.saveNote.textContent = '설정을 Supabase에 저장하지 못했습니다.';
+        });
+      }, 650);
+    }
+
+    async function saveBackendSetup() {
+      const participants = state.participants.map((name, index) => ({
+        slot: index + 1,
+        name,
+        registered: state.registered[index],
+      }));
+      const matches = state.matches.map((match) => ({
+        id: match.id,
+        teamA: match.teamA,
+        teamB: match.teamB,
+        kickoff: match.kickoff,
+        externalId: match.externalId,
+      }));
+
+      const { data, error } = await backend.client.rpc('worldcup_admin_save_setup', {
+        p_admin_pin: session.adminPin,
+        p_admin_pin_next: null,
+        p_participants: participants,
+        p_matches: matches,
+      });
+
+      if (error) throw error;
+      saveSession();
+      state = mergeRemoteState(data);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      saveState('Supabase에 설정을 저장했습니다.');
+    }
+
+    async function saveBackendPrediction(participantIndex, matchId, pick) {
+      if (!backend.enabled || !backend.client || !session.participantId || !session.pin) return;
+      const { data, error } = await backend.client.rpc('worldcup_save_prediction', {
+        p_participant_id: session.participantId,
+        p_pin: session.pin,
+        p_match_id: matchId,
+        p_team: pick?.team || null,
+        p_regular: pick?.regular || null,
+      });
+      if (error) throw error;
+      state = mergeRemoteState(data);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      saveState('Supabase에 예측을 저장했습니다.');
+    }
+
+    async function saveBackendResult(matchId, result) {
+      if (!backend.enabled || !backend.client || !isAdmin()) return;
+      const { data, error } = await backend.client.rpc('worldcup_admin_set_result', {
+        p_admin_pin: session.adminPin,
+        p_match_id: matchId,
+        p_team: result?.team || '',
+        p_regular: result?.regular || '',
+      });
+      if (error) throw error;
+      state = mergeRemoteState(data);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+      saveState('Supabase에 결과를 저장했습니다.');
+    }
+
+    async function syncFootballData(options = {}) {
+      if (!backend.enabled || !backend.client) {
+        els.saveNote.textContent = '원격 DB 연결 후 사용할 수 있습니다.';
+        return;
+      }
+
+      if (backend.footballSyncing) return;
+      backend.footballSyncing = true;
+      if (!options.silent) els.saveNote.textContent = '경기 정보를 동기화하는 중입니다.';
+
+      try {
+        const { data, error } = await backend.client.functions.invoke('sync-football-data');
+        if (error) throw error;
+
+        state.api.lastSync = new Date().toLocaleString('ko-KR');
+        state.api.lastMessage = data?.message || '';
+        await refreshBackendState(data?.message || '경기 정보를 동기화했습니다.');
+      } finally {
+        backend.footballSyncing = false;
+      }
+    }
+
+    function render() {
+      renderPanels();
+      renderLogin();
+      renderAdminParticipants();
+      renderMatches();
+      renderResults();
+      renderApiPanel();
+      renderRounds();
+      renderLeaderboard();
+    }
+
+    function renderPanels() {
+      if (!els.privatePanels) return;
+      els.privatePanels.innerHTML = isAdmin() ? `
+        <section class="tool-block">
+          <div class="block-heading">
+            <h2>경기 팀 설정</h2>
+            <span>팀 + 시작 시각</span>
+          </div>
+          <div class="match-fields" data-match-fields></div>
+        </section>
+        <section class="tool-block">
+          <div class="block-heading">
+            <h2>실제 결과</h2>
+            <span>결과 입력</span>
+          </div>
+          <div class="result-fields" data-result-fields></div>
+        </section>
+        <section class="tool-block">
+          <div class="block-heading">
+            <h2>경기 API</h2>
+            <span>football-data.org</span>
+          </div>
+          <div class="api-panel" data-api-panel></div>
+        </section>
+      ` : '';
+      els.matchFields = app.querySelector('[data-match-fields]');
+      els.resultFields = app.querySelector('[data-result-fields]');
+      els.apiPanel = app.querySelector('[data-api-panel]');
+    }
+
+    function scheduleFootballSync() {
+      clearInterval(backend.footballTimer);
+      backend.footballTimer = null;
+      if (!backend.enabled || !backend.client) return;
+      backend.footballTimer = setInterval(() => {
+        if (!shouldSyncNow()) return;
+        syncFootballData({ silent: true }).catch((error) => {
+          console.error(error);
+          state.api.lastMessage = '자동 동기화 실패';
+          renderApiPanel();
+        });
+      }, 5 * 60 * 1000);
+    }
+
+    function shouldSyncNow() {
+      const now = Date.now();
+      return state.matches.some((match) => {
+        if (!match.kickoff) return false;
+        const t = new Date(match.kickoff).getTime();
+        if (Number.isNaN(t)) return false;
+        const preHit = now >= t - SYNC_PRE_WINDOW_MS && now <= t;
+        const end = t + SYNC_MATCH_DURATION_MS;
+        const postHit = now >= end && now <= end + SYNC_POST_CAP_MS && !isMatchFinished(match);
+        return preHit || postHit;
+      });
+    }
+
+    function renderLogin() {
+      const currentName = session.role === 'admin'
+        ? '로그인됨'
+        : Number.isInteger(session.participantIndex)
+          ? state.participants[session.participantIndex]
+          : '로그인 전';
+
+      els.loginBox.innerHTML = `
+        ${session.role ? `
+          <div class="login-bar">
+            <span class="login-who"><em>현재</em> <strong>${escapeHtml(currentName)}</strong></span>
+            <button type="button" class="btn-ghost btn-sm" data-logout>로그아웃</button>
+          </div>
+        ` : `
+          <div class="login-form">
+            <input type="text" data-login-name placeholder="이름(3글자)" autocomplete="name" />
+            <input type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" data-login-pin placeholder="PIN 4자리" />
+            <button type="button" class="btn-main btn-sm" data-login>참가 / 로그인</button>
+          </div>
+          <p class="login-hint">처음 입력한 이름·PIN이 내 계정이 됩니다.</p>
+        `}
+      `;
+    }
+
+    function renderAdminParticipants() {
+      if (!els.adminParticipants) return;
+      if (!isAdmin()) {
+        els.adminParticipants.innerHTML = '';
+        return;
+      }
+      els.adminParticipants.innerHTML = `
+        <section class="tool-block admin-participants">
+          <div class="block-heading"><h2>참가자 관리</h2><span>관리자</span></div>
+          <div class="admin-participant-list">
+            ${state.participants.map((name, index) => `
+              <div class="admin-participant-row ${state.registered[index] ? 'is-registered' : ''}">
+                <span>${index + 1}</span>
+                <strong>${escapeHtml(state.registered[index] ? name : '빈 자리')}</strong>
+                ${state.registered[index]
+                  ? `<button type="button" class="btn-danger btn-sm" data-clear-participant="${index}">삭제</button>`
+                  : '<em>대기</em>'}
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderMatches() {
+      if (!els.matchFields) return;
+      els.matchFields.innerHTML = state.matches.map((match, index) => `
+        <div class="match-edit">
+          <strong>${match.label}</strong>
+          <label>
+            <span>A</span>
+            <input type="text" value="${escapeAttr(match.teamA)}" data-match-team="${index}:teamA" ${isAdmin() ? '' : 'disabled'} />
+          </label>
+          <label>
+            <span>B</span>
+            <input type="text" value="${escapeAttr(match.teamB)}" data-match-team="${index}:teamB" ${isAdmin() ? '' : 'disabled'} />
+          </label>
+          <label class="kickoff-field">
+            <span>시작</span>
+            <input type="datetime-local" value="${escapeAttr(match.kickoff)}" data-kickoff="${index}" ${isAdmin() ? '' : 'disabled'} />
+          </label>
+          <label class="external-field">
+            <span>API 경기 ID</span>
+            <input type="text" value="${escapeAttr(match.externalId)}" data-external-id="${index}" placeholder="football-data match id" ${isAdmin() ? '' : 'disabled'} />
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function renderApiPanel() {
+      if (!els.apiPanel) return;
+      els.apiPanel.innerHTML = `
+        <button type="button" class="btn-main" data-sync-football ${backend.enabled ? '' : 'disabled'}>경기 정보 동기화</button>
+        <p class="login-hint">football-data.org API 키를 Supabase 함수 secret에 넣으면 팀명, 시작 시각, 종료 결과를 가져옵니다. 운영 모드에서는 경기 시작/종료 즈음 자동으로 다시 확인합니다.</p>
+        <p class="save-note">${state.api.lastSync ? `마지막 동기화: ${escapeHtml(state.api.lastSync)}` : '아직 동기화 전입니다.'}${state.api.lastMessage ? ` · ${escapeHtml(state.api.lastMessage)}` : ''}</p>
+      `;
+    }
+
+    function renderResults() {
+      if (!els.resultFields) return;
+      els.resultFields.innerHTML = state.matches.map((match) => `
+        <label class="result-row">
+          <span>
+            <strong>${match.label}</strong>
+            <small>${escapeHtml(match.teamA)} vs ${escapeHtml(match.teamB)}</small>
+          </span>
+          ${buildSelect(`result:${match.id}`, state.results[match.id], match, true, !isAdmin())}
+        </label>
+      `).join('');
+    }
+
+    function renderRounds() {
+      const stages = stageOrder.filter((s) => matchesInStage(s).length);
+      const current = (selectedStage && stages.includes(selectedStage)) ? selectedStage : activeStage();
+      els.rounds.innerHTML = `
+        <div class="round-tabs" role="tablist">
+          ${stages.map((s) => {
+            const st = roundStatus(s);
+            return `<button type="button" class="round-tab ${s === current ? 'is-active' : ''} is-${st.tone}" data-round-tab="${s}" role="tab" aria-selected="${s === current}">
+              <span class="round-tab__name">${stageLabels[s]}</span>
+              <em class="round-tab__state">${st.label}</em>
+            </button>`;
+          }).join('')}
+        </div>
+        ${renderRoundBlock(current)}
+      `;
+    }
+
+    function renderRoundBlock(stage) {
+      const activeIndexes = getActiveParticipantIndexes();
+      const matches = matchesInStage(stage);
+      if (!matches.length) return '';
+      const scores = stageScores[stage];
+      return `
+        <section class="round-block">
+          <p class="round-meta">정규 ${scores.regular} · 최종 ${scores.final}${(isRoundOpen(stage) && !isRoundLocked(stage) && roundFirstKickoff(stage)) ? ` · 마감 ${formatKickoff(roundFirstKickoff(stage))}` : ''}</p>
+          <div class="round-grid">
+            ${matches.map((match) => renderMatchCard(match, activeIndexes)).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    function roundStatus(stage) {
+      if (!isRoundOpen(stage)) return { label: '대기', tone: 'muted' };
+      if (isRoundComplete(stage)) return { label: '종료', tone: 'done' };
+      if (!isRoundLocked(stage)) return { label: '입력 가능', tone: 'open' };
+      return { label: '잠김', tone: 'muted' };
+    }
+
+    function roundHint(stage) {
+      if (!isRoundOpen(stage)) return '이전 라운드 종료 후 열림';
+      if (!isRoundLocked(stage)) {
+        const first = roundFirstKickoff(stage);
+        return first ? `마감 ${formatKickoff(first)}` : '';
+      }
+      return '';
+    }
+
+    function renderMatchCard(match, activeIndexes) {
+      const finished = isMatchFinished(match);
+      const currentIndex = activeIndexes.find((participantIndex) => isParticipant(participantIndex));
+      const otherIndexes = activeIndexes.filter((participantIndex) => !isParticipant(participantIndex));
+      const pending = activeIndexes.filter((i) => !hasPicked(i, match)).map((i) => state.participants[i]);
+      const submitted = activeIndexes.length - pending.length;
+      const determined = teamsDetermined(match.stage);
+      const statusLabel = finished ? '종료' : !isRoundOpen(match.stage) ? '대기' : isRoundLocked(match.stage) ? '잠김' : '입력 가능';
+      const statusTone = finished ? 'done' : statusLabel === '입력 가능' ? 'open' : 'locked';
+
+      return `
+        <article class="match-card ${finished ? 'is-finished' : ''}">
+          <div class="match-card__top">
+            <div>
+              <strong>${escapeHtml(match.label)}</strong>
+              <small>${formatKickoff(match.kickoff)}</small>
+            </div>
+            <span class="match-status is-${statusTone}">${statusLabel}</span>
+          </div>
+          <div class="vs-block">
+            ${renderTeamSide(match, 'A')}
+            ${vsCenterHtml(match)}
+            ${renderTeamSide(match, 'B')}
+          </div>
+          <div class="prediction-area">
+            <div class="prediction-self">
+              <span class="area-label">내 예측</span>
+              ${Number.isInteger(currentIndex) ? renderSelfPrediction(currentIndex, match, determined) : '<span class="pick-status">로그인 후 입력</span>'}
+            </div>
+            ${!finished && activeIndexes.length ? `
+              <div class="pick-progress">
+                <span class="area-label">제출</span>
+                <span class="pick-dots">
+                  ${activeIndexes.map((participantIndex) => `<i class="pick-dot ${hasPicked(participantIndex, match) ? 'is-on' : ''}" title="${escapeAttr(state.participants[participantIndex])}"></i>`).join('')}
+                </span>
+                <span class="pick-count">${submitted}/${activeIndexes.length}</span>
+              </div>
+            ` : ''}
+            ${!finished && activeIndexes.length
+              ? pending.length > 0
+                ? `<p class="pick-pending">미제출 · ${pending.map(escapeHtml).join(', ')}</p>`
+                : '<p class="pick-pending is-done">전원 제출</p>'
+              : ''}
+            ${finished && otherIndexes.length ? `
+              <div class="other-picks">
+                <span class="area-label">다른 사람</span>
+                <ul>
+                  ${otherIndexes.map((participantIndex) => `
+                    <li>
+                      <span>${escapeHtml(state.participants[participantIndex])}</span>
+                      ${renderPredictionCell(participantIndex, match)}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+          ${!determined ? '<p class="round-note">진출팀 확정 후 선택 가능</p>' : ''}
+        </article>
+      `;
+    }
+
+    function vsCenterHtml(match) {
+      const r = state.results[match.id];
+      const finished = isMatchFinished(match);
+      if (!finished || r == null || r.home == null || r.away == null) {
+        return '<span class="vs-mark">VS</span>';
+      }
+      const label = r.duration === 'EXTRA_TIME' ? 'AET' : r.duration === 'PENALTY_SHOOTOUT' ? 'PSO' : 'FT';
+      const tone = r.duration && r.duration !== 'REGULAR' ? 'is-et' : '';
+      const pens = (r.penHome != null && r.penAway != null)
+        ? `<span class="vs-pens">(${Number(r.penHome)} : ${Number(r.penAway)})</span>` : '';
+      return `
+        <span class="vs-center">
+          <em class="vs-status ${tone}">${label}</em>
+          <span class="vs-score">${Number(r.home)} : ${Number(r.away)}</span>
+          ${pens}
+        </span>`;
+    }
+
+    function hasPicked(participantIndex, match) {
+      return Boolean(getPrediction(participantIndex, match.id));
+    }
+
+    function renderSelfPrediction(participantIndex, match, determined) {
+      if (!determined) {
+        return `<select data-pick="prediction:${participantIndex}:${match.id}" aria-label="${match.label}" disabled><option>진출팀 확정 후 선택</option></select>`;
+      }
+      return renderPredictionCell(participantIndex, match);
+    }
+
+    function renderTeamSide(match, side) {
+      const name = teamName(match, side);
+      const flag = teamsDetermined(match.stage) ? flagUrl(name) : '';
+      const crest = teamsDetermined(match.stage) ? teamCrest(match, side) : '';
+      const r = state.results[match.id];
+      const isWinner = isMatchFinished(match) && r && r.team === side;
+      const badge = flag
+        ? `<span class="team-badge"><img src="${escapeAttr(flag)}" alt="${escapeAttr(name)}" loading="lazy" /></span>`
+        : crest
+          ? `<span class="team-badge"><img src="${escapeAttr(crest)}" alt="${escapeAttr(name)}" loading="lazy" /></span>`
+        : `<span class="team-badge">${escapeHtml(teamInitials(name))}</span>`;
+      return `
+        <div class="team-side ${isWinner ? 'is-winner' : ''}">
+          ${badge}
+          <strong>${escapeHtml(name)}</strong>
+        </div>
+      `;
+    }
+
+    function teamInitials(name) {
+      return String(name || '미정').replace(/\s+/g, '').slice(0, 2) || '미정';
+    }
+
+    function renderPredictionCell(participantIndex, match) {
+      const pick = getPrediction(participantIndex, match.id);
+      const finished = isMatchFinished(match);
+      const locked = isRoundLocked(match.stage);
+      const canEdit = isParticipant(participantIndex) && isRoundOpen(match.stage) && !locked;
+
+      if (canEdit) {
+        return buildSelect(`prediction:${participantIndex}:${match.id}`, pick, match, false, false);
+      }
+
+      if (isParticipant(participantIndex) || finished) {
+        return `<span class="pick-text">${escapeHtml(formatPick(pick, match) || '미제출')}</span>`;
+      }
+
+      return `<span class="pick-status ${pick ? 'is-submitted' : ''}">${pick ? '제출함' : '미제출'}</span>`;
+    }
+
+    function renderLeaderboard() {
+      const activeIndexes = getActiveParticipantIndexes();
+      if (activeIndexes.length === 0) {
+        renderScoreGraph([]);
+        return;
+      }
+
+      const rows = activeIndexes.map((index) => ({
+        name: state.participants[index],
+        index,
+        ...calculateParticipant(index),
+      }));
+
+      const minScore = Math.min(...rows.map(row => row.total));
+      const sorted = rows.sort((a, b) => b.total - a.total || a.index - b.index);
+      renderScoreGraph(sorted);
+    }
+
+    function renderScoreGraph(rows) {
+      if (!els.scoreGraph) return;
+      if (!rows.length) {
+        els.scoreGraph.innerHTML = '<p class="empty-state">아직 참가자가 없습니다. 이름과 4자리 PIN으로 참가해 주세요.</p>';
+        return;
+      }
+
+      const minScore = Math.min(...rows.map(row => row.total));
+      const maxScore = Math.max(1, ...rows.map(row => row.total));
+      const hasAnyResult = state.matches.some((m) => Boolean(state.results[m.id]));
+      els.scoreGraph.innerHTML = rows.map((row, rankIndex) => {
+        const isLast = hasAnyResult && rows.length > 1 && row.total === minScore;
+        const width = Math.max(4, Math.round((row.total / maxScore) * 100));
+        return `
+          <div class="rank-row ${isLast ? 'is-last' : ''}">
+            <span class="rank">${rankIndex + 1}</span>
+            <span class="rank-name">${escapeHtml(row.name)}</span>
+            <div class="graph-track">
+              <i style="width: ${width}%"></i>
+            </div>
+            <strong>${row.total}</strong>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function calculateParticipant(participantIndex) {
+      const byStage = { qf: 0, sf: 0, third: 0, final: 0 };
+      let total = 0;
+
+      state.matches.forEach((match) => {
+        const pick = getPrediction(participantIndex, match.id);
+        const result = state.results[match.id];
+        if (!pick || !result) return;
+
+        const scores = stageScores[match.stage];
+        const regularHit = isRegularHit(pick, result);
+        const finalHit = pick.team === result.team;
+        const earned = (regularHit ? scores.regular : 0) + (finalHit ? scores.final : 0);
+
+        byStage[match.stage] += earned;
+        total += earned;
+      });
+
+      return { total, byStage };
+    }
+
+    function isRegularHit(pick, result) {
+      if (result.regular === 'draw') return pick.regular === 'draw';
+      return pick.regular === 'win' && pick.team === result.team;
+    }
+
+    function getPrediction(participantIndex, matchId) {
+      return state.predictions[participantIndex]?.[matchId] || null;
+    }
+
+    function isMatchFinished(match) {
+      return Boolean(state.results[match.id]);
+    }
+
+    const feederStage = { r16: 'r32', qf: 'r16', sf: 'qf', third: 'sf', final: 'third' };
+
+    function matchesInStage(stage) {
+      return state.matches.filter((m) => m.stage === stage);
+    }
+
+    function activeStage() {
+      return stageOrder.find((s) => matchesInStage(s).length && !isRoundComplete(s)) || 'final';
+    }
+
+    function isRoundComplete(stage) {
+      const ms = matchesInStage(stage);
+      return ms.length > 0 && ms.every((m) => Boolean(state.results[m.id]));
+    }
+
+    function isRoundOpen(stage) {
+      const feeder = feederStage[stage];
+      if (!feeder) return true;
+      return isRoundComplete(feeder);
+    }
+
+    function roundFirstKickoff(stage) {
+      const times = matchesInStage(stage)
+        .map((m) => m.kickoff)
+        .filter(Boolean)
+        .map((v) => new Date(v).getTime())
+        .filter((t) => !Number.isNaN(t));
+      return times.length ? Math.min(...times) : null;
+    }
+
+    function isRoundLocked(stage) {
+      if (matchesInStage(stage).some((m) => Boolean(state.results[m.id]))) return true;
+      const first = roundFirstKickoff(stage);
+      if (first == null) return false;
+      return Date.now() >= first;
+    }
+
+    function teamsDetermined(stage) {
+      return isRoundOpen(stage);
+    }
+
+    const FLAG_CODES = {"andorra":"ad","united arab emirates":"ae","afghanistan":"af","antigua & barbuda":"ag","anguilla":"ai","albania":"al","armenia":"am","angola":"ao","antarctica":"aq","argentina":"ar","american samoa":"as","austria":"at","australia":"au","aruba":"aw","åland islands":"ax","azerbaijan":"az","bosnia & herzegovina":"ba","barbados":"bb","bangladesh":"bd","belgium":"be","burkina faso":"bf","bulgaria":"bg","bahrain":"bh","burundi":"bi","benin":"bj","st. barthélemy":"bl","bermuda":"bm","brunei":"bn","bolivia":"bo","brazil":"br","bahamas":"bs","bhutan":"bt","bouvet island":"bv","botswana":"bw","belarus":"by","belize":"bz","canada":"ca","cocos (keeling) islands":"cc","congo - kinshasa":"cd","central african republic":"cf","congo - brazzaville":"cg","switzerland":"ch","côte d’ivoire":"ci","cook islands":"ck","chile":"cl","cameroon":"cm","china":"cn","colombia":"co","sark":"cq","costa rica":"cr","cuba":"cu","cape verde":"cv","curaçao":"cw","christmas island":"cx","cyprus":"cy","czechia":"cz","germany":"de","djibouti":"dj","denmark":"dk","dominica":"dm","dominican republic":"do","algeria":"dz","ecuador":"ec","estonia":"ee","egypt":"eg","western sahara":"eh","eritrea":"er","spain":"es","ethiopia":"et","finland":"fi","fiji":"fj","falkland islands":"fk","micronesia":"fm","faroe islands":"fo","france":"fr","gabon":"ga","united kingdom":"gb","grenada":"gd","georgia":"ge","french guiana":"gf","guernsey":"gg","ghana":"gh","gibraltar":"gi","greenland":"gl","gambia":"gm","guinea":"gn","guadeloupe":"gp","equatorial guinea":"gq","greece":"gr","south georgia & south sandwich islands":"gs","guatemala":"gt","guam":"gu","guinea-bissau":"gw","guyana":"gy","hong kong sar china":"hk","heard & mcdonald islands":"hm","honduras":"hn","croatia":"hr","haiti":"ht","hungary":"hu","indonesia":"id","ireland":"ie","israel":"il","isle of man":"im","india":"in","british indian ocean territory":"io","iraq":"iq","iran":"ir","iceland":"is","italy":"it","jersey":"je","jamaica":"jm","jordan":"jo","japan":"jp","kenya":"ke","kyrgyzstan":"kg","cambodia":"kh","kiribati":"ki","comoros":"km","st. kitts & nevis":"kn","north korea":"kp","south korea":"kr","kuwait":"kw","cayman islands":"ky","kazakhstan":"kz","laos":"la","lebanon":"lb","st. lucia":"lc","liechtenstein":"li","sri lanka":"lk","liberia":"lr","lesotho":"ls","lithuania":"lt","luxembourg":"lu","latvia":"lv","libya":"ly","morocco":"ma","monaco":"mc","moldova":"md","montenegro":"me","st. martin":"mf","madagascar":"mg","marshall islands":"mh","north macedonia":"mk","mali":"ml","myanmar (burma)":"mm","mongolia":"mn","macao sar china":"mo","northern mariana islands":"mp","martinique":"mq","mauritania":"mr","montserrat":"ms","malta":"mt","mauritius":"mu","maldives":"mv","malawi":"mw","mexico":"mx","malaysia":"my","mozambique":"mz","namibia":"na","new caledonia":"nc","niger":"ne","norfolk island":"nf","nigeria":"ng","nicaragua":"ni","netherlands":"nl","norway":"no","nepal":"np","nauru":"nr","niue":"nu","new zealand":"nz","oman":"om","panama":"pa","peru":"pe","french polynesia":"pf","papua new guinea":"pg","philippines":"ph","pakistan":"pk","poland":"pl","st. pierre & miquelon":"pm","pitcairn islands":"pn","puerto rico":"pr","palestinian territories":"ps","portugal":"pt","palau":"pw","paraguay":"py","qatar":"qa","réunion":"re","romania":"ro","serbia":"rs","russia":"ru","rwanda":"rw","saudi arabia":"sa","solomon islands":"sb","seychelles":"sc","sudan":"sd","sweden":"se","singapore":"sg","st. helena":"sh","slovenia":"si","svalbard & jan mayen":"sj","slovakia":"sk","sierra leone":"sl","san marino":"sm","senegal":"sn","somalia":"so","suriname":"sr","south sudan":"ss","são tomé & príncipe":"st","el salvador":"sv","sint maarten":"sx","syria":"sy","eswatini":"sz","turks & caicos islands":"tc","chad":"td","french southern territories":"tf","togo":"tg","thailand":"th","tajikistan":"tj","tokelau":"tk","timor-leste":"tl","turkmenistan":"tm","tunisia":"tn","tonga":"to","türkiye":"tr","trinidad & tobago":"tt","tuvalu":"tv","taiwan":"tw","tanzania":"tz","ukraine":"ua","uganda":"ug","u.s. outlying islands":"um","united states":"us","uruguay":"uy","uzbekistan":"uz","vatican city":"va","st. vincent & grenadines":"vc","venezuela":"ve","british virgin islands":"vg","u.s. virgin islands":"vi","vietnam":"vn","vanuatu":"vu","wallis & futuna":"wf","samoa":"ws","kosovo":"xk","yemen":"yd","mayotte":"yt","south africa":"za","zambia":"zm","zimbabwe":"zw","england":"gb-eng","scotland":"gb-sct","wales":"gb-wls","northern ireland":"gb-nir","korea republic":"kr","korea, south":"kr","korea dpr":"kp","usa":"us","united states of america":"us","ivory coast":"ci","cote d ivoire":"ci","ir iran":"ir","czech republic":"cz","turkey":"tr","turkiye":"tr","cabo verde":"cv","dr congo":"cd","democratic republic of the congo":"cd","congo dr":"cd","bosnia and herzegovina":"ba","bosnia":"ba","curacao":"cw","viet nam":"vn","the gambia":"gm","uae":"ae","hong kong":"hk","chinese taipei":"tw","china pr":"cn","macedonia":"mk","swaziland":"sz","east timor":"tl","myanmar":"mm"};
+
+    function flagUrl(name) {
+      const code = FLAG_CODES[String(name || '').trim().toLowerCase()];
+      return code ? `https://flagcdn.com/${code}.svg` : '';
+    }
+
+    function teamName(match, side) {
+      if (!teamsDetermined(match.stage)) return '미정';
+      return side === 'A' ? match.teamA : match.teamB;
+    }
+
+    function teamCrest(match, side) {
+      return side === 'A' ? match.crestA || '' : match.crestB || '';
+    }
+
+    function formatKickoff(value) {
+      if (!value) return '시작 시각 미정';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '시작 시각 확인 필요';
+      return date.toLocaleString('ko-KR', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    function setPrediction(participantIndex, matchId, value) {
+      if (!state.predictions[participantIndex]) state.predictions[participantIndex] = {};
+      if (!value) {
+        delete state.predictions[participantIndex][matchId];
+        return;
+      }
+      state.predictions[participantIndex][matchId] = parseValue(value);
+    }
+
+    function buildSelect(name, selected, match, includeEmpty, disabled) {
+      const options = [
+        includeEmpty ? '<option value="">미입력</option>' : '<option value="">선택</option>',
+        optionHtml(match, selected, 'A', 'win'),
+        optionHtml(match, selected, 'A', 'draw'),
+        optionHtml(match, selected, 'B', 'draw'),
+        optionHtml(match, selected, 'B', 'win'),
+      ].join('');
+
+      return `<select data-pick="${name}" aria-label="${match.label}" ${disabled ? 'disabled' : ''}>${options}</select>`;
+    }
+
+    function optionHtml(match, selected, team, regular) {
+      const value = `${team}:${regular}`;
+      const isSelected = selected?.team === team && selected?.regular === regular;
+      return `<option value="${value}" ${isSelected ? 'selected' : ''}>${escapeHtml(formatPick({ team, regular }, match))}</option>`;
+    }
+
+    function parseValue(value) {
+      const [team, regular] = value.split(':');
+      if (!['A', 'B'].includes(team) || !['win', 'draw'].includes(regular)) return null;
+      return { team, regular };
+    }
+
+    function formatPick(pick, match) {
+      if (!pick || !pick.team) return '';
+      const teamName = pick.team === 'A' ? match.teamA : match.teamB;
+      const label = pick.regular === 'win' ? '승' : '무';
+      return `${teamName}(${label})`;
+    }
+
+    function decodeHashState() {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#state=')) return null;
+      try {
+        const bytes = atob(hash.slice(7));
+        const json = decodeURIComponent(bytes.split('').map(char =>
+          `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`
+        ).join(''));
+        return JSON.parse(json);
+      } catch {
+        return null;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    app.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+
+      if (target.dataset.participant) {
+        if (!isAdmin()) return;
+        const index = Number(target.dataset.participant);
+        state.participants[index] = target.value || `참가자 ${index + 1}`;
+        saveState();
+        renderLogin();
+        renderRounds();
+        renderLeaderboard();
+        queueBackendSetupSave();
+      }
+
+      if (target.dataset.matchTeam) {
+        if (!isAdmin()) return;
+        const [index, key] = target.dataset.matchTeam.split(':');
+        state.matches[Number(index)][key] = target.value || (key === 'teamA' ? '팀 A' : '팀 B');
+        saveState();
+        renderResults();
+        renderRounds();
+        renderLeaderboard();
+        queueBackendSetupSave();
+      }
+
+      if (target.dataset.kickoff) {
+        if (!isAdmin()) return;
+        const index = Number(target.dataset.kickoff);
+        state.matches[index].kickoff = target.value;
+        saveState();
+        renderRounds();
+        queueBackendSetupSave();
+      }
+
+      if (target.dataset.externalId) {
+        if (!isAdmin()) return;
+        const index = Number(target.dataset.externalId);
+        state.matches[index].externalId = target.value.trim();
+        saveState();
+        queueBackendSetupSave();
+      }
+    });
+
+    app.addEventListener('change', (event) => {
+      const target = event.target;
+
+      if (target instanceof HTMLSelectElement && target.dataset.pick) {
+        const [kind, participantIndex, matchId] = target.dataset.pick.split(':');
+        if (kind === 'prediction') {
+          const index = Number(participantIndex);
+          const match = state.matches.find(item => item.id === matchId);
+          if (!match || !isParticipant(index) || !isRoundOpen(match.stage) || isRoundLocked(match.stage)) return;
+          setPrediction(index, matchId, target.value);
+          if (backend.enabled) {
+            saveBackendPrediction(index, matchId, parseValue(target.value)).catch((error) => {
+              console.error(error);
+              els.saveNote.textContent = '예측을 Supabase에 저장하지 못했습니다.';
+              refreshBackendState().catch(() => {});
+            });
+          }
+        }
+        if (kind === 'result') {
+          if (!isAdmin()) return;
+          const resultMatchId = participantIndex;
+          const parsed = parseValue(target.value);
+          if (parsed) state.results[resultMatchId] = parsed;
+          else delete state.results[resultMatchId];
+          if (backend.enabled) {
+            saveBackendResult(resultMatchId, parsed).catch((error) => {
+              console.error(error);
+              els.saveNote.textContent = '결과를 Supabase에 저장하지 못했습니다.';
+              refreshBackendState().catch(() => {});
+            });
+          }
+        }
+        saveState();
+        renderRounds();
+        renderLeaderboard();
+      }
+
+    });
+
+    app.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const tab = target.closest('[data-round-tab]');
+      if (tab) { selectedStage = tab.dataset.roundTab; renderRounds(); return; }
+
+      if (target.dataset.login !== undefined) {
+        const nameInput = app.querySelector('[data-login-name]');
+        const pinInput = app.querySelector('[data-login-pin]');
+        if (!(nameInput instanceof HTMLInputElement) || !(pinInput instanceof HTMLInputElement)) return;
+
+        const name = nameInput.value.trim();
+        const pin = pinInput.value.trim();
+
+        if (backend.enabled && backend.client) {
+          backend.client.rpc('worldcup_join', {
+            p_name: name,
+            p_pin: pin,
+          }).then(async ({ data, error }) => {
+            if (error) throw error;
+            if (data?.role === 'admin') {
+              session = { role: 'admin', participantIndex: null, participantId: null, pin: '', adminPin: pin };
+              saveSession();
+              await refreshBackendState('로그인했습니다.');
+              return;
+            }
+            if (data?.role === 'participant') {
+              session = {
+                role: 'participant',
+                participantIndex: Number(data.slot) - 1,
+                participantId: data.participantId,
+                pin,
+                adminPin: '',
+              };
+              saveSession();
+              await refreshBackendState(`${data.name}님으로 로그인했습니다.`);
+              return;
+            }
+            els.saveNote.textContent = data?.reason === 'full'
+              ? '참가 인원이 이미 5명입니다.'
+              : '이미 등록된 이름입니다. PIN을 확인해 주세요.';
+          }).catch((error) => {
+            console.error(error);
+            els.saveNote.textContent = 'Supabase 참가/로그인에 실패했습니다.';
+          });
+          return;
+        }
+
+        joinLocalParticipant(name, pin);
+      }
+
+      if (target.dataset.logout !== undefined) {
+        session = { role: null, participantIndex: null, participantId: null, pin: '', adminPin: '' };
+        saveSession();
+        saveState('로그아웃했습니다.');
+        if (backend.enabled) refreshBackendState().catch(() => render());
+        else render();
+      }
+
+      if (target.dataset.clearParticipant) {
+        if (!isAdmin()) return;
+        const index = Number(target.dataset.clearParticipant);
+        state.registered[index] = false;
+        state.participants[index] = `빈 자리 ${index + 1}`;
+        state.pins[index] = '';
+        delete state.predictions[index];
+        saveState();
+        render();
+        queueBackendSetupSave();
+      }
+
+      if (target.dataset.syncFootball !== undefined) {
+        syncFootballData().catch((error) => {
+          console.error(error);
+          els.saveNote.textContent = '경기 정보 동기화에 실패했습니다.';
+        });
+      }
+    });
+
+    initBackend();
+  })();
+</script>
+
+<style is:global>
+  .bet-app {
+    position: relative;
+    padding-bottom: 2.5rem;
+  }
+
+  .bet-app .wc-theme-toggle {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+  }
+
+  .bet-app .hero {
+    display: block;
+    padding-top: 1.4rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bet-app .eyebrow {
+    margin: 0 0 0.55rem;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .bet-app .hero h1 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .bet-app .app-stack {
+    display: grid;
+    gap: 1rem;
+    padding-top: 1rem;
+  }
+
+  .bet-app .tool-block,
+  .bet-app .scoreboard,
+  .bet-app .prediction-board {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-0);
+  }
+
+  .bet-app [hidden] {
+    display: none !important;
+  }
+
+  .bet-app .scoreboard,
+  .bet-app .prediction-board,
+  .bet-app .tool-block {
+    padding: 0.9rem 1rem;
+  }
+
+  .bet-app .board-area {
+    gap: 0.9rem;
+  }
+
+  .bet-app .app-grid {
+    gap: 1.25rem;
+    padding-top: 1rem;
+  }
+
+  .bet-app .login-tool {
+    padding: 0.75rem;
+  }
+
+  .bet-app .block-heading,
+  .bet-app .section-head {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .bet-app .block-heading h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .bet-app .section-head h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .bet-app .block-heading span,
+  .bet-app .section-head p {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .bet-app .section-head .eyebrow {
+    margin: 0 0 0.55rem;
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .bet-app .login-box,
+  .bet-app .match-fields,
+  .bet-app .result-fields {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .bet-app .private-panels {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .bet-app .private-panels:empty {
+    display: none;
+  }
+
+  .bet-app .btn-sm {
+    min-height: 2rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .bet-app .login-tool .block-heading {
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .bet-app .login-tool .block-heading h2 {
+    font-size: 0.95rem;
+  }
+
+  .bet-app .login-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .bet-app .login-who {
+    min-width: 0;
+  }
+
+  .bet-app .login-who em {
+    margin-right: 0.4rem;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-style: normal;
+  }
+
+  .bet-app .login-who strong {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bet-app .login-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bet-app .login-form input {
+    flex: 1 1 8rem;
+    width: auto;
+    min-height: 2.1rem;
+  }
+
+  .bet-app .login-form .btn-main {
+    flex: 0 0 auto;
+  }
+
+  .bet-app .login-form button {
+    flex: 0 0 auto;
+  }
+
+  .bet-app .login-hint {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    line-height: 1.55;
+  }
+
+  .bet-app .admin-participant-list {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .bet-app .admin-participant-row {
+    display: grid;
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bet-app .admin-participant-row span {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .bet-app .admin-participant-row strong {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bet-app .admin-participant-row em {
+    justify-self: start;
+    padding: 0.22rem 0.5rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-1) 84%, transparent);
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .bet-app .field-row,
+  .bet-app .match-edit label,
+  .bet-app .result-row {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .bet-app .field-row {
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .bet-app .check-row input {
+    width: 1.1rem;
+    min-height: 1.1rem;
+  }
+
+  .bet-app .field-row span,
+  .bet-app .match-edit label span {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .bet-app input,
+  .bet-app select {
+    width: 100%;
+    min-height: 2.35rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-0);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.88rem;
+  }
+
+  .bet-app input:focus,
+  .bet-app select:focus {
+    outline: 2px solid color-mix(in srgb, var(--brand-accent) 45%, transparent);
+    outline-offset: 2px;
+  }
+
+  .bet-app input:disabled,
+  .bet-app select:disabled {
+    cursor: not-allowed;
+    opacity: 0.66;
+  }
+
+  .bet-app input {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .bet-app select {
+    padding: 0.45rem 0.55rem;
+  }
+
+  .bet-app .match-edit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem;
+    align-items: end;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .bet-app .match-edit:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .bet-app .match-edit strong {
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .bet-app .kickoff-field {
+    grid-column: auto;
+  }
+
+  .bet-app .external-field {
+    grid-column: auto;
+  }
+
+  .bet-app .result-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .bet-app .result-row:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .bet-app .result-row span {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .bet-app .result-row strong,
+  .bet-app .result-row small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bet-app .result-row strong {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .bet-app .result-row small {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+  }
+
+  .bet-app .btn-main,
+  .bet-app .btn-ghost,
+  .bet-app .btn-danger,
+  .bet-app .file-button {
+    min-height: 2.4rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .bet-app .btn-main {
+    border-color: var(--brand-accent);
+    background: var(--brand-accent);
+    color: white;
+  }
+
+  .bet-app .btn-ghost,
+  .bet-app .file-button {
+    display: inline-grid;
+    place-items: center;
+    background: var(--bg-1);
+    color: var(--text-primary);
+  }
+
+  .bet-app .btn-danger {
+    background: transparent;
+    color: var(--crimson);
+  }
+
+  .bet-app .file-button input {
+    display: none;
+  }
+
+  .bet-app .save-note {
+    margin: 0.8rem 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+  }
+
+  .bet-app .leaderboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.7rem;
+  }
+
+  .bet-app .score-graph {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.8rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  }
+
+  .bet-app .rank-row {
+    display: grid;
+    grid-template-columns: 1.7rem minmax(3.5rem, 0.5fr) minmax(0, 1fr) 2.5rem;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .bet-app .rank-row strong {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .bet-app .rank-name {
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bet-app .rank-row strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    text-align: right;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .bet-app .graph-track {
+    height: 0.8rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--bg-2);
+  }
+
+  .bet-app .graph-track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--brand-accent);
+  }
+
+  .bet-app .rank-row:first-child .graph-track i {
+    background: var(--gold);
+  }
+
+  .bet-app .rank-row.is-last .graph-track i {
+    background: var(--crimson);
+  }
+
+  .bet-app .rank {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--bg-2);
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .bet-app .rank-row:first-child .rank {
+    background: color-mix(in srgb, var(--gold) 22%, transparent);
+    color: var(--gold);
+  }
+
+  .bet-app .rank-row:nth-child(2) .rank {
+    background: color-mix(in srgb, var(--text-tertiary) 18%, transparent);
+  }
+
+  .bet-app .rank-row.is-last .rank {
+    background: color-mix(in srgb, var(--crimson) 14%, transparent);
+    color: var(--crimson);
+  }
+
+  .bet-app .rank-row.is-last .rank-name,
+  .bet-app .rank-row.is-last strong {
+    color: var(--crimson);
+  }
+
+  .bet-app .empty-state {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    font-size: 0.88rem;
+  }
+
+  .bet-app .rounds {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .bet-app .round-block {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .bet-app .round-tabs {
+    display: flex;
+    gap: 0.4rem;
+    overflow: visible;
+    margin-bottom: 0.9rem;
+  }
+
+  .bet-app .round-tab {
+    display: inline-flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-1);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .bet-app .round-tab__name {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .bet-app .round-tab__state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-tertiary);
+    font-size: 0.68rem;
+    font-style: normal;
+  }
+
+  .bet-app .round-tab__state::before {
+    content: '';
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .bet-app .round-tab.is-active {
+    border-color: var(--brand-accent);
+    box-shadow: inset 0 0 0 1px var(--brand-accent);
+    background: color-mix(in srgb, var(--brand-accent) 12%, transparent);
+    color: var(--brand-accent);
+  }
+
+  .bet-app .round-tab.is-open .round-tab__state {
+    color: var(--brand-accent);
+  }
+
+  .bet-app .round-tab.is-done .round-tab__state {
+    color: var(--teal);
+  }
+
+  .bet-app .round-tab.is-muted .round-tab__state {
+    color: var(--text-tertiary);
+  }
+
+  .bet-app .round-tab.is-active .round-tab__state {
+    color: var(--brand-accent);
+  }
+
+  .bet-app .round-block {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .bet-app .round-block:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .bet-app .round-meta {
+    margin: 0 0 0.7rem;
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .bet-app .round-state {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .bet-app .round-state small {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+  }
+
+  .bet-app .status-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.7rem;
+    padding: 0.18rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .bet-app .status-pill.is-open {
+    border-color: color-mix(in srgb, var(--brand-accent) 44%, var(--border));
+    background: color-mix(in srgb, var(--brand-accent) 10%, transparent);
+    color: var(--brand-accent);
+  }
+
+  .bet-app .status-pill.is-done {
+    border-color: color-mix(in srgb, var(--teal) 44%, var(--border));
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    color: var(--teal);
+  }
+
+  .bet-app .round-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .bet-app .match-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    min-width: 0;
+    padding: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--bg-1) 76%, transparent);
+  }
+
+  .bet-app .match-card.is-finished {
+    border-color: color-mix(in srgb, var(--teal) 34%, var(--border));
+  }
+
+  .bet-app .match-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .bet-app .match-card__top strong {
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .bet-app .match-card__top small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .bet-app .match-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.7rem;
+    padding: 0.18rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .bet-app .match-status.is-open {
+    border-color: color-mix(in srgb, var(--brand-accent) 44%, var(--border));
+    background: color-mix(in srgb, var(--brand-accent) 10%, transparent);
+    color: var(--brand-accent);
+  }
+
+  .bet-app .match-status.is-done {
+    border-color: color-mix(in srgb, var(--teal) 44%, var(--border));
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    color: var(--teal);
+  }
+
+  .bet-app .match-status.is-locked {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--bg-1) 82%, transparent);
+    color: var(--text-tertiary);
+  }
+
+  .bet-app .vs-block {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: center;
+  }
+
+  .bet-app .team-side {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .bet-app .team-side .team-badge {
+    justify-self: center;
+    display: inline-grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    overflow: hidden;
+    place-items: center;
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-accent) 22%, transparent);
+    background: var(--bg-2);
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .bet-app .team-side .team-badge img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .bet-app .team-side strong {
+    overflow-wrap: anywhere;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .bet-app .team-side.is-winner strong {
+    color: var(--teal);
+  }
+
+  .bet-app .vs-mark {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--brand-accent) 35%, var(--border));
+    border-radius: 999px;
+    color: var(--brand-accent);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .bet-app .vs-center {
+    display: inline-grid;
+    justify-items: center;
+    gap: 0.15rem;
+  }
+
+  .bet-app .vs-status {
+    font-style: normal;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
+  .bet-app .vs-status.is-et {
+    color: var(--teal);
+  }
+
+  .bet-app .vs-score {
+    font-variant-numeric: tabular-nums;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .bet-app .vs-pens {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .bet-app .prediction-area {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: auto;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .bet-app .prediction-self,
+  .bet-app .other-picks {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .bet-app .area-label {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .bet-app .pick-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bet-app .pick-dots {
+    display: inline-flex;
+    gap: 0.28rem;
+  }
+
+  .bet-app .pick-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .bet-app .pick-dot.is-on {
+    border-color: var(--brand-accent);
+    background: var(--brand-accent);
+  }
+
+  .bet-app .pick-count {
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .bet-app .pick-pending {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .bet-app .pick-pending.is-done {
+    color: var(--teal);
+  }
+
+  .bet-app .other-picks ul {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bet-app .other-picks li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    align-items: center;
+  }
+
+  .bet-app .other-picks li > span:first-child {
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bet-app .pick-text,
+  .bet-app .pick-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .bet-app .pick-text {
+    font-weight: 600;
+  }
+
+  .bet-app .pick-status {
+    padding: 0.18rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .bet-app .pick-status.is-submitted {
+    border-color: color-mix(in srgb, var(--brand-accent) 38%, var(--border));
+    background: color-mix(in srgb, var(--brand-accent) 9%, transparent);
+    color: var(--brand-accent);
+    font-weight: 700;
+  }
+
+  .bet-app .round-note {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+  }
+
+  .bet-app .api-credit {
+    margin: 1rem 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 720px) {
+    .bet-app .scoreboard,
+    .bet-app .prediction-board,
+    .bet-app .tool-block {
+      padding: 1rem;
+    }
+
+    .bet-app .login-tool {
+      padding: 0.85rem;
+    }
+
+    .bet-app .section-head,
+    .bet-app .block-heading {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .bet-app .private-panels {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .bet-app .result-row {
+      grid-template-columns: minmax(0, 1fr) minmax(9rem, 0.42fr);
+      gap: 0.8rem;
+    }
+
+    .bet-app .round-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bet-app .round-grid:has(.match-card:only-child) {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
