@@ -407,7 +407,7 @@ begin
     when 'qf' then 'r16'
     when 'sf' then 'qf'
     when 'third' then 'sf'
-    when 'final' then 'third'
+    when 'final' then 'sf'
     else null
   end;
 

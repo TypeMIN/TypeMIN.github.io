@@ -984,7 +984,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
       return Boolean(state.results[match.id]);
     }
 
-    const feederStage = { r16: 'r32', qf: 'r16', sf: 'qf', third: 'sf', final: 'third' };
+    const feederStage = { r16: 'r32', qf: 'r16', sf: 'qf', third: 'sf', final: 'sf' };
 
     function matchesInStage(stage) {
       return state.matches.filter((m) => m.stage === stage);
