@@ -1,0 +1,16 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Arrow from './Arrow.astro';
+import ExternalLink from './ExternalLink.astro';
+interface Props { project: CollectionEntry<'projects'>; }
+const { project } = Astro.props;
+const { title, summary, tags, appUrl, repoUrl } = project.data;
+---
+{appUrl && <article class="app-card">
+  <a href={appUrl} class="app-launch" target="_blank" rel="noopener noreferrer">
+    <div class="app-card-top"><span class="app-icon" aria-hidden="true">{Array.from(title)[0]}</span><span class="app-launch-label">앱 실행 <Arrow external /></span></div>
+    <h3>{title}</h3><p>{summary}</p><span class="sr-only"> (외부 사이트, 새 탭)</span>
+  </a>
+  {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
+  <div class="app-card-footer"><a href={`/projects/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>
+</article>}

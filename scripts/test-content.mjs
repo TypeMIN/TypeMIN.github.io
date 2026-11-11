@@ -29,7 +29,7 @@ try {
   await cp(join(root, 'src/content/projects/.gitkeep'), join(sandbox, 'src/content/projects/.gitkeep'));
 
   assertBuild();
-  assert.match(await readOutput('index.html'), /다음 작업을 위한 자리입니다/);
+  assert.match(await readOutput('index.html'), /아직 공개된 웹앱이 없습니다/);
   assert.match(await readOutput('projects/index.html'), /00개 프로젝트/);
   assert.doesNotMatch(await readOutput('projects/index.html'), /class="project-card"/);
 
@@ -46,6 +46,12 @@ repoUrl: "https://github.com/TypeMIN/example"
 
 Markdown 렌더링을 확인합니다.
 `);
+  await writeFile(join(sandbox, 'src/content/projects/fixture-unfeatured-app.md'), `---
+title: "대표가 아닌 앱"
+summary: "대표 프로젝트 여부와 관계없이 허브에서 실행할 수 있어야 합니다."
+appUrl: "https://example.com/another-app"
+---
+`);
   await writeFile(join(sandbox, 'src/content/projects/fixture-notes.md'), `---
 title: "검증용 기록"
 summary: "외부 링크가 없는 프로젝트입니다."
@@ -60,8 +66,13 @@ summary: "외부 링크가 없는 프로젝트입니다."
   const notes = await readOutput('projects/fixture-notes/index.html');
   assert.match(home, /검증용 앱/);
   assert.doesNotMatch(home, /검증용 기록/);
-  assert.doesNotMatch(home, /다음 작업을 위한 자리입니다/);
-  assert.match(list, /02개 프로젝트/);
+  assert.doesNotMatch(home, /아직 공개된 웹앱이 없습니다/);
+  assert.match(home, /대표가 아닌 앱/);
+  assert.match(home, /href="https:\/\/example.com\/another-app"[^>]*target="_blank"/);
+  assert.match(home, /href="https:\/\/example.com\/app"[^>]*class="app-launch"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/);
+  assert.match(home, /href="\/projects\/fixture-app\/"/);
+  assert.equal((home.match(/class="app-card"/g) ?? []).length, 2);
+  assert.match(list, /03개 프로젝트/);
   assert.match(list, /검증용 기록/);
   assert.match(list, /href="\/projects\/fixture-app\/"/);
   assert.match(list, /href="https:\/\/example.com\/app"/);

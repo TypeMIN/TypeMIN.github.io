@@ -4,7 +4,7 @@ import ExternalLink from '../components/ExternalLink.astro';
 import '../styles/global.css';
 interface Props { title?: string; description?: string; noindex?: boolean; }
 const { title, description = site.description, noindex = false } = Astro.props;
-const pageTitle = title ? `${title} · ${site.name}` : `${site.name} — 포트폴리오 & 프로젝트`;
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} — 프로젝트 & 웹앱 허브`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const image = new URL('/og-default.png', Astro.site);
 const isProjects = Astro.url.pathname.startsWith('/projects/');
@@ -41,7 +41,7 @@ const isProjects = Astro.url.pathname.startsWith('/projects/');
     <header class="site-header container">
       <a class="wordmark" href="/" aria-label="TypeMIN 홈"><span class="brand-mark" aria-hidden="true">t.</span>{site.name}</a>
       <nav aria-label="주 메뉴">
-        <a href="/" aria-current={!isProjects && Astro.url.pathname === '/' ? 'page' : undefined}>홈</a>
+        <a href="/" aria-current={!isProjects && Astro.url.pathname === '/' ? 'page' : undefined}>허브</a>
         <a href="/projects/" aria-current={isProjects ? 'page' : undefined}>프로젝트</a>
         <a href="/#about">소개</a>
       </nav>
@@ -49,7 +49,7 @@ const isProjects = Astro.url.pathname.startsWith('/projects/');
     </header>
     <main id="main" class="container" tabindex="-1"><slot /></main>
     <footer class="site-footer container">
-      <div><a class="footer-brand" href="/">{site.name}<span class="brand-dot">.</span></a><p>작업과 경험이 이어지는 곳.</p></div>
+      <div><a class="footer-brand" href="/">{site.name}<span class="brand-dot">.</span></a><p>프로젝트와 웹앱의 시작점.</p></div>
       <div class="footer-end"><ExternalLink href={site.githubUrl}>GitHub</ExternalLink><span class="mono">© {new Date().getFullYear()} TypeMIN</span></div>
     </footer>
   </body>

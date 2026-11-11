@@ -1,8 +1,10 @@
 # TypeMIN
 
-[typemin.github.io](https://typemin.github.io) — 포트폴리오와 웹앱 프로젝트의 시작점.
+[typemin.github.io](https://typemin.github.io) — 프로젝트와 웹앱을 바로 여는 개인 허브.
 
 Astro와 TypeScript로 만든 정적 사이트입니다. 소개와 프로젝트 설명은 GitHub Pages에서 제공하고, 개별 앱은 Vercel 등의 외부 배포 주소로 연결합니다.
+
+홈에는 웹앱·포트폴리오·GitHub 바로가기와 앱 실행 목록을 배치했습니다. `appUrl`이 있는 모든 프로젝트는 대표 여부와 관계없이 허브에 표시되며, 앱 카드를 누르면 새 탭에서 실행됩니다. 프로젝트 소개와 소스 코드 링크는 별도로 제공합니다.
 
 ## 로컬 실행
 
@@ -52,7 +54,7 @@ repoUrl: "https://github.com/TypeMIN/your-project"
 
 - `title`과 `summary`는 필수입니다.
 - `tags`는 생략하면 빈 목록, `featured`는 생략하면 `false`입니다.
-- `featured: true`인 프로젝트는 홈에 최대 3개 표시합니다.
+- `featured: true`인 프로젝트는 홈의 프로젝트 노트에 최대 3개 표시합니다. 앱 실행 목록에는 `appUrl`이 있는 프로젝트가 모두 표시됩니다.
 - 프로젝트는 파일명 순으로 정렬합니다. 파일명을 바꾸면 상세 주소도 변경됩니다.
 - `appUrl`과 `repoUrl`은 선택 사항입니다. 준비되지 않았다면 해당 줄을 삭제합니다. 빈 문자열이나 예시 주소를 실제 공개 파일에 남기지 마세요.
 - 앱과 저장소 주소는 `https://` 또는 `http://`로 시작하는 전체 URL을 사용합니다. 링크는 외부 사이트라는 안내와 함께 새 탭에서 열립니다.
