@@ -210,7 +210,7 @@ svg { flex-shrink: 0; }
   .shortcut-symbol { width: 26px; height: 26px; }
   .shortcut-title h2 { font-size: 14px; white-space: nowrap; }
   .shortcut-title { gap: 5px; }
-  .shortcut-title > .arrow { width: 14px; height: 14px; }
+  .shortcut-title > .arrow { display: none; }
   .hub-section { padding-block: 27px; }
   .hub-section-heading { gap: 10px; margin-bottom: 16px; }
   .hub-section-heading h2 { font-size: 22px; }
