@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Arrow from '../components/Arrow.astro';
+import ExternalLink from '../components/ExternalLink.astro';
+import EmptyState from '../components/EmptyState.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { site } from '../config/site';
+import { getProjects } from '../lib/projects';
+const projects = await getProjects();
+const featured = projects.filter((project) => project.data.featured).slice(0, 3);
+---
+<BaseLayout>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="small-dot" aria-hidden="true"></span> PORTFOLIO & PROJECTS</p>
+      <h1 id="hero-title">{site.headline[0]}<br /><span>{site.headline[1]}</span></h1>
+      <p class="hero-description">{site.introduction}</p>
+      <div class="hero-actions"><a class="button" href="/projects/">프로젝트 둘러보기 <Arrow /></a><ExternalLink href={site.githubUrl}>GitHub 방문</ExternalLink></div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="art-top"><span>TypeMIN</span><span>↗</span></div>
+      <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+      <span class="art-monogram">t<span>.</span></span>
+      <div class="art-bottom"><span>IDEAS INTO<br />EXPERIENCES</span><span class="art-cross">+</span></div>
+    </div>
+    <div class="hero-baseline"><span class="mono">A PERSONAL SPACE ON THE WEB</span><a href="#selected" class="text-link">아래로 살펴보기 <span aria-hidden="true">↓</span></a></div>
+  </section>
+
+  <section id="selected" class="section" aria-labelledby="selected-title">
+    <div class="section-heading"><div><p class="eyebrow section-index">01 / SELECTED WORK</p><h2 id="selected-title">대표 프로젝트<span class="brand-dot">.</span></h2></div><a href="/projects/" class="text-link">전체 프로젝트 <Arrow /></a></div>
+    {featured.length > 0 ? <div class="project-grid">{featured.map((project, index) => <ProjectCard project={project} index={index} />)}</div> : <EmptyState featured />}
+  </section>
+
+  <section id="about" class="section about-section" aria-labelledby="about-title">
+    <div><p class="eyebrow section-index">02 / ABOUT</p><h2 id="about-title">안녕하세요,<br />TypeMIN입니다<span class="brand-dot">.</span></h2></div>
+    <div class="about-copy"><p>{site.about}</p><p class="about-secondary">프로젝트에서는 작업의 배경과 과정을 살펴보고, 앱 실행 링크를 통해 직접 경험할 수 있습니다.</p><ExternalLink href={site.githubUrl} class="text-link">GitHub에서 만나기</ExternalLink></div>
+  </section>
+</BaseLayout>

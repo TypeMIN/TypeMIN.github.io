@@ -1,0 +1,56 @@
+---
+import { site } from '../config/site';
+import ExternalLink from '../components/ExternalLink.astro';
+import '../styles/global.css';
+interface Props { title?: string; description?: string; noindex?: boolean; }
+const { title, description = site.description, noindex = false } = Astro.props;
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} — 포트폴리오 & 프로젝트`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const image = new URL('/og-default.png', Astro.site);
+const isProjects = Astro.url.pathname.startsWith('/projects/');
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f8f9fb" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TypeMIN — Portfolio & Projects" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+    <header class="site-header container">
+      <a class="wordmark" href="/" aria-label="TypeMIN 홈"><span class="brand-mark" aria-hidden="true">t.</span>{site.name}</a>
+      <nav aria-label="주 메뉴">
+        <a href="/" aria-current={!isProjects && Astro.url.pathname === '/' ? 'page' : undefined}>홈</a>
+        <a href="/projects/" aria-current={isProjects ? 'page' : undefined}>프로젝트</a>
+        <a href="/#about">소개</a>
+      </nav>
+      <ExternalLink href={site.githubUrl} class="header-github">GitHub</ExternalLink>
+    </header>
+    <main id="main" class="container" tabindex="-1"><slot /></main>
+    <footer class="site-footer container">
+      <div><a class="footer-brand" href="/">{site.name}<span class="brand-dot">.</span></a><p>작업과 경험이 이어지는 곳.</p></div>
+      <div class="footer-end"><ExternalLink href={site.githubUrl}>GitHub</ExternalLink><span class="mono">© {new Date().getFullYear()} TypeMIN</span></div>
+    </footer>
+  </body>
+</html>

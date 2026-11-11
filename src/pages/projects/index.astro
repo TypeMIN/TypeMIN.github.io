@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import { getProjects } from '../../lib/projects';
+const projects = await getProjects();
+---
+<BaseLayout title="프로젝트" description="TypeMIN의 프로젝트를 살펴보고 웹앱을 직접 경험해 보세요.">
+  <section class="page-intro" aria-labelledby="projects-title"><p class="eyebrow">THE PROJECT INDEX</p><h1 id="projects-title">프로젝트<span class="brand-dot">.</span></h1><p>작업의 이야기부터 직접 사용해 보는 경험까지.</p></section>
+  <section class="project-list-section" aria-label="전체 프로젝트">
+    <div class="list-meta"><span class="eyebrow">ALL PROJECTS</span><span class="mono">{String(projects.length).padStart(2, '0')}개 프로젝트</span></div>
+    {projects.length > 0 ? <div class="project-grid">{projects.map((project, index) => <ProjectCard project={project} index={index} />)}</div> : <EmptyState />}
+  </section>
+</BaseLayout>

@@ -1,0 +1,13 @@
+---
+interface Props { featured?: boolean; }
+const { featured = false } = Astro.props;
+const Heading = featured ? 'h3' : 'h2';
+---
+<div class="empty-state">
+  <span class="empty-symbol" aria-hidden="true">+</span>
+  <div>
+    <p class="eyebrow">COMING SOON</p>
+    <Heading>{featured ? '다음 작업을 위한 자리입니다.' : '프로젝트를 준비하고 있습니다.'}</Heading>
+    <p>{featured ? '공개할 준비가 된 프로젝트를 이곳에서 소개하겠습니다.' : '새로운 작업과 직접 사용해 볼 수 있는 앱을 곧 소개하겠습니다.'}</p>
+  </div>
+</div>
