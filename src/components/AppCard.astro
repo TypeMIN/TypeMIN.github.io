@@ -12,5 +12,5 @@ const { title, summary, tags, appUrl, repoUrl } = project.data;
     <h3>{title}</h3><p>{summary}</p><span class="sr-only"> (외부 사이트, 새 탭)</span>
   </a>
   {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
-  <div class="app-card-footer"><a href={`/projects/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>
+  <div class="app-card-footer"><a href={`/portfolio/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>
 </article>}

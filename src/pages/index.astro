@@ -1,50 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Arrow from '../components/Arrow.astro';
-import ExternalLink from '../components/ExternalLink.astro';
-import AppCard from '../components/AppCard.astro';
+import FeaturedProject from '../components/FeaturedProject.astro';
 import { site } from '../config/site';
 import { getProjects } from '../lib/projects';
-const projects = await getProjects();
-const apps = projects.filter((project) => project.data.appUrl);
-const featured = projects.filter((project) => project.data.featured).slice(0, 3);
+const featured = (await getProjects()).filter((project) => project.data.featured).slice(0, 8);
+const emptySlots = Array.from({ length: 8 - featured.length }, (_, index) => featured.length + index + 1);
 ---
 <BaseLayout>
-  <header class="hub-intro">
-    <p class="eyebrow"><span class="small-dot" aria-hidden="true"></span> YOUR STARTING POINT</p>
-    <h1>{site.headline}<span class="brand-dot">.</span></h1>
-    <p>{site.introduction}</p>
-  </header>
+  <header class="home-intro"><p class="eyebrow"><span class="small-dot" aria-hidden="true"></span> PROJECTS & EXPERIENCES</p><h1>{site.headline}<span class="brand-dot">.</span></h1><p>{site.introduction}</p></header>
 
-  <nav class="hub-shortcuts" aria-label="빠른 이동">
-    <a href="#apps" class="hub-shortcut">
-      <div class="shortcut-top"><span class="shortcut-symbol" aria-hidden="true">↗</span><span class="eyebrow">WEB APPS</span></div>
-      <div class="shortcut-title"><h2>웹앱</h2><Arrow /></div>
-      <p>사용할 앱을 찾아 바로 실행하기</p>
-    </a>
-    <a href="/projects/" class="hub-shortcut">
-      <div class="shortcut-top"><span class="shortcut-symbol" aria-hidden="true">≡</span><span class="eyebrow">PORTFOLIO</span></div>
-      <div class="shortcut-title"><h2>포트폴리오</h2><Arrow /></div>
-      <p>프로젝트 소개와 작업 과정 살펴보기</p>
-    </a>
-    <a href={site.githubUrl} class="hub-shortcut" target="_blank" rel="noopener noreferrer">
-      <div class="shortcut-top"><span class="shortcut-symbol shortcut-code" aria-hidden="true">&lt;/&gt;</span><span class="eyebrow">SOURCE & CODE</span></div>
-      <div class="shortcut-title"><h2>GitHub</h2><Arrow external /></div>
-      <p>코드와 저장소 둘러보기</p><span class="sr-only"> (외부 사이트, 새 탭)</span>
-    </a>
-  </nav>
-
-  <section id="apps" class="hub-section" aria-labelledby="apps-title">
-    <div class="hub-section-heading"><div><p class="eyebrow">APP LAUNCHER</p><h2 id="apps-title">웹앱<span class="brand-dot">.</span><span class="item-count" aria-label={`${apps.length}개 앱`}>{String(apps.length).padStart(2, '0')}</span></h2></div><span class="hub-section-note">선택하면 새 탭에서 실행됩니다.</span></div>
-    {apps.length > 0 ? <div class="app-grid">{apps.map((project) => <AppCard project={project} />)}</div> : <div class="hub-empty"><span class="launcher-symbol" aria-hidden="true"><span></span><span></span><span></span><span></span></span><div><h3>아직 공개된 웹앱이 없습니다.</h3><p>앱이 준비되면 여기에서 바로 실행할 수 있습니다.</p></div><a href="/projects/" class="text-link">프로젝트 보기 <Arrow /></a></div>}
+  <section class="home-projects" aria-labelledby="featured-title">
+    <div class="home-section-heading"><div><p class="eyebrow">SELECTED PROJECTS</p><h2 id="featured-title">대표 프로젝트</h2></div><a href="/webapp-projects/" class="text-link">웹앱 전체 보기 <Arrow /></a></div>
+    <div class="featured-grid">
+      {featured.map((project, index) => <FeaturedProject project={project} index={index} />)}
+      {emptySlots.map((number) => <div class="project-placeholder"><div class="placeholder-top"><span class="mono">{String(number).padStart(2, '0')}</span><span class="eyebrow">COMING SOON</span></div><span class="placeholder-plus" aria-hidden="true">+</span><h3>준비 중</h3><p>새로운 프로젝트가 들어올 자리입니다.</p></div>)}
+    </div>
   </section>
 
-  {featured.length > 0 && <section class="hub-section" aria-labelledby="notes-title">
-    <div class="hub-section-heading"><div><p class="eyebrow">SELECTED PROJECTS</p><h2 id="notes-title">프로젝트 노트<span class="brand-dot">.</span></h2></div><a href="/projects/" class="text-link">전체 프로젝트 <Arrow /></a></div>
-    <div class="project-notes">{featured.map((project) => <a href={`/projects/${project.id}/`} class="project-note"><div><h3>{project.data.title}</h3><p>{project.data.summary}</p></div><span class="text-link">상세 소개 <Arrow /></span></a>)}</div>
-  </section>}
-
-  <section id="about" class="hub-about" aria-labelledby="about-title">
-    <div><p class="eyebrow">ABOUT</p><h2 id="about-title">TypeMIN 소개</h2><p>{site.about}</p></div><ExternalLink href={site.githubUrl} class="text-link">GitHub에서 만나기</ExternalLink>
-  </section>
+  <section class="home-about" aria-labelledby="intro-title"><div><p class="eyebrow">A LITTLE ABOUT ME</p><h2 id="intro-title">안녕하세요, TypeMIN입니다<span class="brand-dot">.</span></h2><p>{site.shortAbout}</p></div><div class="home-about-links"><a href="/portfolio/" class="button">포트폴리오 보기 <Arrow /></a><a href="/about/" class="text-link">소개 더 보기 <Arrow /></a></div></section>
 </BaseLayout>

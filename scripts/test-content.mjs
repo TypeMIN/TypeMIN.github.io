@@ -19,21 +19,30 @@ const assertBuild = () => {
   assert.equal(result.status, 0, result.stdout + result.stderr);
 };
 
+const count = (html, className) => (html.match(new RegExp(`class="${className}"`, 'g')) ?? []).length;
+const writeProject = (slug, content) => writeFile(join(sandbox, 'src/content/projects', `${slug}.md`), content);
+
 try {
   for (const path of ['src', 'public', 'package.json', 'tsconfig.json', 'astro.config.mjs']) {
     await cp(join(root, path), join(sandbox, path), { recursive: true });
   }
   await symlink(join(root, 'node_modules'), join(sandbox, 'node_modules'), 'dir');
-  // Keep the test independent of the owner's published projects.
   await rm(join(sandbox, 'src/content/projects'), { recursive: true });
   await cp(join(root, 'src/content/projects/.gitkeep'), join(sandbox, 'src/content/projects/.gitkeep'));
 
   assertBuild();
-  assert.match(await readOutput('index.html'), /아직 공개된 웹앱이 없습니다/);
-  assert.match(await readOutput('projects/index.html'), /00개 프로젝트/);
-  assert.doesNotMatch(await readOutput('projects/index.html'), /class="project-card"/);
+  const emptyHome = await readOutput('index.html');
+  assert.equal(count(emptyHome, 'project-placeholder'), 8);
+  assert.equal(count(emptyHome, 'featured-project'), 0);
+  assert.match(emptyHome, /href="\/webapp-projects\/"/);
+  assert.match(emptyHome, /href="\/portfolio\/"/);
+  assert.match(emptyHome, /href="\/about\/"/);
+  assert.match(await readOutput('portfolio/index.html'), /00개 프로젝트/);
+  assert.match(await readOutput('webapp-projects/index.html'), /웹앱 프로젝트를 준비하고 있습니다/);
+  assert.match(await readOutput('about/index.html'), /안녕하세요, TypeMIN입니다/);
+  assert.match(await readOutput('projects/index.html'), /url=\/portfolio\//);
 
-  await writeFile(join(sandbox, 'src/content/projects/fixture-app.md'), `---
+  await writeProject('fixture-app', `---
 title: "검증용 앱"
 summary: "검증을 위한 프로젝트이며 공개되지 않습니다."
 tags: [TypeScript, Astro]
@@ -46,47 +55,70 @@ repoUrl: "https://github.com/TypeMIN/example"
 
 Markdown 렌더링을 확인합니다.
 `);
-  await writeFile(join(sandbox, 'src/content/projects/fixture-unfeatured-app.md'), `---
+  await writeProject('fixture-unfeatured-app', `---
 title: "대표가 아닌 앱"
-summary: "대표 프로젝트 여부와 관계없이 허브에서 실행할 수 있어야 합니다."
+summary: "전체 웹앱 목록에만 표시되어야 합니다."
 appUrl: "https://example.com/another-app"
 ---
 `);
-  await writeFile(join(sandbox, 'src/content/projects/fixture-notes.md'), `---
+  await writeProject('fixture-notes', `---
 title: "검증용 기록"
-summary: "외부 링크가 없는 프로젝트입니다."
+summary: "외부 링크가 없는 대표 프로젝트입니다."
+featured: true
 ---
 
 내용을 준비하고 있습니다.
 `);
   assertBuild();
   const home = await readOutput('index.html');
-  const list = await readOutput('projects/index.html');
-  const app = await readOutput('projects/fixture-app/index.html');
-  const notes = await readOutput('projects/fixture-notes/index.html');
+  const portfolio = await readOutput('portfolio/index.html');
+  const apps = await readOutput('webapp-projects/index.html');
+  const app = await readOutput('portfolio/fixture-app/index.html');
+  const notes = await readOutput('portfolio/fixture-notes/index.html');
   assert.match(home, /검증용 앱/);
-  assert.doesNotMatch(home, /검증용 기록/);
-  assert.doesNotMatch(home, /아직 공개된 웹앱이 없습니다/);
-  assert.match(home, /대표가 아닌 앱/);
-  assert.match(home, /href="https:\/\/example.com\/another-app"[^>]*target="_blank"/);
-  assert.match(home, /href="https:\/\/example.com\/app"[^>]*class="app-launch"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/);
-  assert.match(home, /href="\/projects\/fixture-app\/"/);
-  assert.equal((home.match(/class="app-card"/g) ?? []).length, 2);
-  assert.match(list, /03개 프로젝트/);
-  assert.match(list, /검증용 기록/);
-  assert.match(list, /href="\/projects\/fixture-app\/"/);
-  assert.match(list, /href="https:\/\/example.com\/app"/);
+  assert.match(home, /검증용 기록/);
+  assert.doesNotMatch(home, /대표가 아닌 앱/);
+  assert.equal(count(home, 'featured-project'), 2);
+  assert.equal(count(home, 'project-placeholder'), 6);
+  assert.match(home, /class="featured-project" href="https:\/\/example.com\/app" target="_blank" rel="noopener noreferrer"/);
+  assert.match(home, /class="featured-project" href="\/portfolio\/fixture-notes\/"/);
+  assert.equal(count(apps, 'app-card'), 2);
+  assert.match(apps, /대표가 아닌 앱/);
+  assert.doesNotMatch(apps, /검증용 기록/);
+  assert.match(apps, /href="https:\/\/example.com\/another-app"[^>]*target="_blank"/);
+  assert.match(apps, /href="\/portfolio\/fixture-app\/"/);
+  assert.match(portfolio, /03개 프로젝트/);
+  assert.match(portfolio, /검증용 기록/);
+  assert.match(portfolio, /대표가 아닌 앱/);
   assert.match(app, /<h2[^>]*>검증용 본문<\/h2>/);
-  assert.match(app, /TypeScript/);
   assert.match(app, /href="https:\/\/example.com\/app"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/);
   assert.match(app, /href="https:\/\/github.com\/TypeMIN\/example"/);
   assert.match(app, /외부 사이트, 새 탭/);
-  assert.match(app, /https:\/\/typemin.github.io\/projects\/fixture-app\//);
+  assert.match(app, /https:\/\/typemin.github.io\/portfolio\/fixture-app\//);
   assert.doesNotMatch(notes, /앱 실행|소스 코드/);
-  assert.match(await readOutput('sitemap-0.xml'), /https:\/\/typemin.github.io\/projects\/fixture-app\//);
+  assert.match(await readOutput('projects/fixture-app/index.html'), /url=\/portfolio\/fixture-app\//);
+  const sitemap = await readOutput('sitemap-0.xml');
+  for (const path of ['webapp-projects', 'portfolio', 'about']) {
+    assert.ok(sitemap.includes(`https://typemin.github.io/${path}/`));
+  }
+  assert.ok(sitemap.includes('https://typemin.github.io/portfolio/fixture-app/'));
   assert.match(await readOutput('404.html'), /name="robots" content="noindex"/);
 
-  await writeFile(join(sandbox, 'src/content/projects/fixture-invalid.md'), `---
+  for (let index = 1; index <= 9; index++) {
+    await writeProject(`zz-extra-${index}`, `---
+title: "추가 대표 프로젝트 ${index}"
+summary: "홈의 8개 표시 제한 검증"
+featured: true
+---
+`);
+  }
+  assertBuild();
+  const fullHome = await readOutput('index.html');
+  assert.equal(count(fullHome, 'featured-project'), 8);
+  assert.equal(count(fullHome, 'project-placeholder'), 0);
+  assert.doesNotMatch(fullHome, /추가 대표 프로젝트 7/);
+
+  await writeProject('fixture-invalid', `---
 title: "유효하지 않은 링크"
 summary: "유효하지 않은 URL은 배포를 막아야 합니다."
 appUrl: "javascript:alert(1)"
@@ -95,7 +127,7 @@ appUrl: "javascript:alert(1)"
   const invalid = build();
   assert.notEqual(invalid.status, 0, 'A non-web app URL must fail the build.');
   assert.match(invalid.stdout + invalid.stderr, /http 또는 https/);
-  console.log('Content checks passed: empty state, featured selection, Markdown routes, optional links, metadata, sitemap, and invalid URLs.');
+  console.log('Content checks passed: eight-slot home, featured limit, webapp/portfolio separation, about, legacy redirects, optional links, Markdown, sitemap, and URL validation.');
 } finally {
   await rm(sandbox, { recursive: true, force: true });
 }

@@ -7,7 +7,12 @@ const { title, description = site.description, noindex = false } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : `${site.name} — 프로젝트 & 웹앱 허브`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const image = new URL('/og-default.png', Astro.site);
-const isProjects = Astro.url.pathname.startsWith('/projects/');
+const navigation = [
+  { href: '/', label: 'Home' },
+  { href: '/webapp-projects/', label: 'Webapp Projects' },
+  { href: '/portfolio/', label: 'Portfolio' },
+  { href: '/about/', label: 'About' },
+];
 ---
 <!doctype html>
 <html lang="ko">
@@ -41,9 +46,7 @@ const isProjects = Astro.url.pathname.startsWith('/projects/');
     <header class="site-header container">
       <a class="wordmark" href="/" aria-label="TypeMIN 홈"><span class="brand-mark" aria-hidden="true">t.</span>{site.name}</a>
       <nav aria-label="주 메뉴">
-        <a href="/" aria-current={!isProjects && Astro.url.pathname === '/' ? 'page' : undefined}>허브</a>
-        <a href="/projects/" aria-current={isProjects ? 'page' : undefined}>프로젝트</a>
-        <a href="/#about">소개</a>
+        {navigation.map(({ href, label }) => <a href={href} aria-current={(href === '/' ? Astro.url.pathname === '/' : Astro.url.pathname.startsWith(href)) ? 'page' : undefined}>{label}</a>)}
       </nav>
       <ExternalLink href={site.githubUrl} class="header-github">GitHub</ExternalLink>
     </header>

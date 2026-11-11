@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AppCard from '../../components/AppCard.astro';
+import { getProjects } from '../../lib/projects';
+const apps = (await getProjects()).filter((project) => project.data.appUrl);
+---
+<BaseLayout title="Webapp Projects" description="TypeMIN의 웹앱 프로젝트를 둘러보고 바로 실행해 보세요.">
+  <section class="page-intro" aria-labelledby="webapps-title"><p class="eyebrow">EXPLORE & LAUNCH</p><h1 id="webapps-title">Webapp Projects<span class="brand-dot">.</span></h1><p>직접 사용해 볼 수 있는 웹앱 프로젝트를 모았습니다.</p></section>
+  <section class="project-list-section" aria-label="웹앱 목록">
+    <div class="list-meta"><span class="eyebrow">ALL WEB APPS</span><span class="mono">{String(apps.length).padStart(2, '0')}개 웹앱</span></div>
+    {apps.length > 0 ? <div class="app-grid">{apps.map((project) => <AppCard project={project} />)}</div> : <div class="hub-empty"><span class="launcher-symbol" aria-hidden="true"><span></span><span></span><span></span><span></span></span><div><h2>웹앱 프로젝트를 준비하고 있습니다.</h2><p>공개할 준비가 된 앱부터 하나씩 소개하겠습니다.</p></div></div>}
+  </section>
+</BaseLayout>

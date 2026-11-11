@@ -15,7 +15,7 @@ const { Content } = await render(project);
 ---
 <BaseLayout title={title} description={summary}>
   <article class="project-detail">
-    <a href="/projects/" class="text-link back-link"><span aria-hidden="true">←</span> 전체 프로젝트</a>
+    <a href="/portfolio/" class="text-link back-link"><span aria-hidden="true">←</span> 포트폴리오 목록</a>
     <header class="detail-header"><p class="eyebrow">PROJECT NOTES</p><h1>{title}</h1><p class="detail-summary">{summary}</p>
       {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
       {(appUrl || repoUrl) && <div class="detail-actions">{appUrl && <ExternalLink href={appUrl} class="button">앱 실행</ExternalLink>}{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>}

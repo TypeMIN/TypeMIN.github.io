@@ -8,11 +8,11 @@ const { title, summary, tags, appUrl, repoUrl } = project.data;
 ---
 <article class="project-card">
   <div class="project-card-top"><span class="mono">{String(index + 1).padStart(2, '0')}</span><span class="eyebrow">PROJECT</span></div>
-  <h3><a href={`/projects/${project.id}/`}>{title}<Arrow /></a></h3>
+  <h2><a href={`/portfolio/${project.id}/`}>{title}<Arrow /></a></h2>
   <p>{summary}</p>
   {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
   <div class="project-actions">
-    <a href={`/projects/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>
+    <a href={`/portfolio/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>
     {appUrl && <ExternalLink href={appUrl}>앱 실행</ExternalLink>}
     {repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}
   </div>
