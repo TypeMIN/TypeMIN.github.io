@@ -15,9 +15,12 @@ Astro와 TypeScript로 만든 정적 사이트입니다. 소개와 프로젝트 
 
 ## 로컬 실행
 
+현재 로컬 경로는 `/Users/typemin/Workspace/dev-typemin-github-io`입니다. 기존 `Documents/Projetcs` 아래의 작업 폴더에서 이 경로로 이동했습니다. 실행·빌드·콘텐츠 테스트는 저장소 기준 상대 경로를 사용합니다.
+
 Node.js 24.14.1 이상인 24 버전과 npm을 사용합니다.
 
 ```sh
+cd /Users/typemin/Workspace/dev-typemin-github-io
 nvm use
 npm ci
 npm run dev
@@ -89,3 +92,9 @@ GitHub 저장소의 **Settings → Pages → Source**를 **GitHub Actions**로 �
 ## 초기화 이력
 
 기존 사이트 파일을 삭제한 커밋과 새 사이트를 작성한 커밋을 분리했습니다. 이전 사이트는 Git 이력에 보존되어 있습니다. 저장소 외부의 서비스와 데이터, 다른 브랜치·태그는 초기화하지 않았습니다.
+
+## Notion 프로젝트 기록
+
+[Notion 프로젝트 페이지](https://www.notion.so/4164ce1cf1d081bf9da0df72956d4b6f)에 현재 목적·상태·로컬 경로, 사이트 구조, 콘텐츠 등록 방법, 검증 결과와 주요 변경 이력을 기록합니다.
+
+코드와 실행 방법의 기준은 Git 저장소입니다. 기능·메뉴·콘텐츠 구조·배포 방식에 의미 있는 변경이 끝나면 같은 Notion 페이지의 현황과 변경 이력을 갱신합니다. 이후 에이전트 작업을 위한 기준은 `AGENTS.md`에 정리했습니다. Notion 기록은 연결된 도구로 작업 완료 시 갱신하며, Git push마다 자동 동기화하는 별도 서비스는 사용하지 않습니다.
