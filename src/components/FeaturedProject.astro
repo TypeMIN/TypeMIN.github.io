@@ -1,13 +1,14 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import Arrow from './Arrow.astro';
+import ProjectVisual from './ProjectVisual.astro';
 interface Props { project: CollectionEntry<'projects'>; index: number; }
 const { project, index } = Astro.props;
-const { title, summary, appUrl } = project.data;
+const { title, summary, appUrl, presentation } = project.data;
 ---
-<a class="featured-project" href={appUrl ?? `/portfolio/${project.id}/`} target={appUrl ? '_blank' : undefined} rel={appUrl ? 'noopener noreferrer' : undefined}>
-  <div class="featured-project-top"><span class="featured-project-icon" aria-hidden="true">{Array.from(title)[0]}</span><span class="mono">{String(index + 1).padStart(2, '0')}</span></div>
-  <h3>{title}</h3><p>{summary}</p>
-  <span class="featured-project-action">{appUrl ? '앱 열기' : '프로젝트 보기'}<Arrow external={Boolean(appUrl)} /></span>
+<a class="featured-project" href={appUrl ?? `/portfolio/${project.id}/`} target={appUrl ? '_blank' : undefined} rel={appUrl ? 'noopener noreferrer' : undefined} style={{ '--project-accent': presentation?.accent ?? '#2456db' }}>
+  <div class="featured-project-cover"><ProjectVisual cover={presentation?.cover} /><span class="project-number mono">{String(index + 1).padStart(2, '0')}</span></div>
+  <div class="featured-project-body"><p class="project-category">{presentation?.category ?? '프로젝트'}</p><h3>{title}</h3><p class="project-tagline">{presentation?.tagline ?? summary}</p>
+  <span class="featured-project-action">{appUrl ? presentation?.action ?? '앱 열기' : '프로젝트 보기'}<Arrow external={Boolean(appUrl)} /></span></div>
   {appUrl && <span class="sr-only"> (외부 사이트, 새 탭)</span>}
 </a>

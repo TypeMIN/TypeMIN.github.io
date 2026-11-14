@@ -1,0 +1,7 @@
+---
+interface Props { cover?: string; }
+const { cover } = Astro.props;
+---
+<div class="project-visual" aria-hidden="true">
+  {cover ? <img src={cover} alt="" width="640" height="360" loading="lazy" decoding="async" /> : <svg viewBox="0 0 640 360" fill="none"><path d="M0 0h640v360H0z" fill="#edf1f8"/><rect x="170" y="78" width="218" height="160" rx="20" stroke="#9fb2dc" stroke-width="3" transform="rotate(-8 170 78)"/><rect x="266" y="136" width="218" height="160" rx="20" fill="#dce6fb" stroke="#7898df" stroke-width="3"/><path d="M324 218h100m-32-32 32 32-32 32" stroke="#2456db" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>}
+</div>

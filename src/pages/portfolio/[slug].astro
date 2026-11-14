@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ExternalLink from '../../components/ExternalLink.astro';
+import ProjectVisual from '../../components/ProjectVisual.astro';
 import { getProjects } from '../../lib/projects';
 
 export async function getStaticPaths() {
@@ -10,16 +11,17 @@ export async function getStaticPaths() {
 }
 interface Props { project: CollectionEntry<'projects'>; }
 const { project } = Astro.props;
-const { title, summary, tags, appUrl, repoUrl } = project.data;
+const { title, summary, tags, appUrl, repoUrl, presentation } = project.data;
 const { Content } = await render(project);
 ---
 <BaseLayout title={title} description={summary}>
-  <article class="project-detail">
+  <article class="project-detail" style={{ '--project-accent': presentation?.accent ?? '#2456db' }}>
     <a href="/portfolio/" class="text-link back-link"><span aria-hidden="true">←</span> 포트폴리오 목록</a>
-    <header class="detail-header"><p class="eyebrow">PROJECT NOTES</p><h1>{title}</h1><p class="detail-summary">{summary}</p>
+    <header class="detail-header"><p class="project-category">{presentation?.category ?? 'PROJECT NOTES'}</p><h1>{title}</h1><p class="detail-summary">{summary}</p>
       {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
-      {(appUrl || repoUrl) && <div class="detail-actions">{appUrl && <ExternalLink href={appUrl} class="button">앱 실행</ExternalLink>}{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>}
+      {(appUrl || repoUrl) && <div class="detail-actions">{appUrl && <ExternalLink href={appUrl} class="button">{presentation?.action ?? '앱 실행'}</ExternalLink>}{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>}
     </header>
+    {presentation && <div class="detail-cover"><ProjectVisual cover={presentation.cover} /></div>}
     <div class="prose"><Content /></div>
   </article>
 </BaseLayout>

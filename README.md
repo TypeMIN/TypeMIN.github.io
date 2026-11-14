@@ -71,6 +71,22 @@ repoUrl: "https://github.com/TypeMIN/your-project"
 - 중첩 폴더와 별도의 `slug` 필드는 사용하지 않습니다. 상세 주소는 파일명으로 결정합니다.
 - 모든 Markdown 파일은 공개됩니다. 작성 중인 초안은 이 폴더 밖에서 관리합니다.
 
+### 프로젝트별 비주얼
+
+카드의 용도·한 줄 소개·커버·강조색·실행 문구는 선택 필드 `presentation`으로 관리합니다. 홈과 웹앱 목록은 서비스의 사용 경험을 먼저 보여주고, 기술 태그는 Portfolio에 표시합니다.
+
+```yaml
+presentation:
+  category: "야구 보드게임"
+  tagline: "카드 한 장으로 바뀌는 승부"
+  cover: "/images/projects/board-base-ball.svg"
+  accent: "#205b43"
+  action: "야구 한 판 시작"
+  highlights: [AI 대전, 온라인 1:1, 팀 파티플레이]
+```
+
+`category`, `tagline`, `cover`, `accent`는 비주얼을 지정할 때 필수입니다. `action`은 선택 사항이며 `highlights`에는 최대 3개 기능을 넣습니다. 커버는 `public/images/projects/`의 SVG·PNG·WebP·JPEG, 강조색은 6자리 HEX를 사용합니다. `presentation`을 생략한 기존 콘텐츠는 공통 커버와 기본 문구로 표시됩니다. 기본 커버는 서비스 특성을 나타낸 일러스트이며 실제 앱 화면 캡처와 구분합니다.
+
 프로젝트가 없으면 준비 중 안내가 표시됩니다. 기본 공유 이미지는 `public/og-default.png`이며, 편집용 원본은 같은 폴더의 SVG입니다.
 
 ## Vercel 앱 연결

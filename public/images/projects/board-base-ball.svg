@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" fill="none">
+  <rect width="640" height="360" fill="#102d28"/>
+  <path d="M0 300 320-20 640 300M0 350 320 30 640 350M80 360 320 120 560 360" stroke="#254d3d" stroke-width="36"/>
+  <path d="M108 200a245 245 0 0 1 424 0L320 325Z" fill="#327151"/>
+  <path d="M168 232a176 176 0 0 1 304 0L320 325Z" fill="#40845f"/>
+  <path d="m320 93 138 125-138 112-138-112Z" fill="#c9a67d"/>
+  <path d="m320 127 101 91-101 81-101-81Z" fill="#245940"/>
+  <path d="m320 93 138 125-138 112-138-112Z" stroke="#f0e5c5" stroke-width="2"/>
+  <path d="M320 330 100 130M320 330l220-200" stroke="#f0e5c5" stroke-width="2" stroke-dasharray="7 7" opacity=".5"/>
+  <rect x="310" y="84" width="20" height="20" rx="2" transform="rotate(45 320 94)" fill="#fff2cf"/>
+  <rect x="448" y="208" width="20" height="20" rx="2" transform="rotate(45 458 218)" fill="#fff2cf"/>
+  <rect x="172" y="208" width="20" height="20" rx="2" transform="rotate(45 182 218)" fill="#fff2cf"/>
+  <path d="M306 313h28v16l-14 11-14-11Z" fill="#fff2cf"/>
+  <circle cx="320" cy="218" r="17" fill="#c9a67d"/>
+  <circle cx="320" cy="218" r="5" fill="#fff2cf"/>
+  <g transform="translate(66 182) rotate(-15 52 52)">
+    <circle cx="52" cy="52" r="51" fill="#f9f4e7"/>
+    <path d="M17 15c29 18 29 56 0 75M86 15c-29 18-29 56 0 75" stroke="#ba5446" stroke-width="3"/>
+    <path d="m21 24 10-6m-3 20 11-4m-8 19h11m-12 14 11 4m-19 11 10 6m52-64-10-6m3 20-11-4m8 19H63m12 14-11 4m19 11-10 6" stroke="#ba5446" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(474 148) rotate(17 47 72)">
+    <rect x="8" y="-5" width="87" height="134" rx="10" fill="#dbc99c" stroke="#102d28" stroke-width="3"/>
+    <rect x="-6" y="6" width="87" height="134" rx="10" fill="#efe5c9" stroke="#102d28" stroke-width="3"/>
+    <rect x="-20" y="17" width="87" height="134" rx="10" fill="#fff5dc" stroke="#102d28" stroke-width="3"/>
+    <path d="m9 112 24-55c5-12 18-6 12 5l-29 53" fill="#bc8d56"/>
+    <path d="m4 122 12-16" stroke="#75452f" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="0" cy="52" r="12" stroke="#c05243" stroke-width="2"/>
+  </g>
+  <path d="m75 60 4 10 11 1-9 7 3 11-9-6-9 6 3-11-9-7 11-1ZM552 68l3 7 8 1-6 5 2 8-7-5-7 5 2-8-6-5 8-1Z" fill="#d9bf7b"/>
+</svg>

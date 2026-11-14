@@ -2,12 +2,14 @@
 import type { CollectionEntry } from 'astro:content';
 import ExternalLink from './ExternalLink.astro';
 import Arrow from './Arrow.astro';
+import ProjectVisual from './ProjectVisual.astro';
 interface Props { project: CollectionEntry<'projects'>; index: number; }
 const { project, index } = Astro.props;
-const { title, summary, tags, appUrl, repoUrl } = project.data;
+const { title, summary, tags, appUrl, repoUrl, presentation } = project.data;
 ---
-<article class="project-card">
-  <div class="project-card-top"><span class="mono">{String(index + 1).padStart(2, '0')}</span><span class="eyebrow">PROJECT</span></div>
+<article class="project-card" style={{ '--project-accent': presentation?.accent ?? '#2456db' }}>
+  <a href={`/portfolio/${project.id}/`} class="portfolio-cover" aria-label={`${title} 상세 소개`}><ProjectVisual cover={presentation?.cover} /></a>
+  <div class="portfolio-card-body"><div class="project-card-top"><span class="project-category">{presentation?.category ?? '프로젝트'}</span><span class="mono">{String(index + 1).padStart(2, '0')}</span></div>
   <h2><a href={`/portfolio/${project.id}/`}>{title}<Arrow /></a></h2>
   <p>{summary}</p>
   {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
@@ -15,5 +17,6 @@ const { title, summary, tags, appUrl, repoUrl } = project.data;
     <a href={`/portfolio/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>
     {appUrl && <ExternalLink href={appUrl}>앱 실행</ExternalLink>}
     {repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}
+  </div>
   </div>
 </article>

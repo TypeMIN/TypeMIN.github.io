@@ -4,6 +4,13 @@ summary: "AI 대전부터 온라인 1:1·팀 파티플레이까지, 친구와 �
 tags: [Next.js, TypeScript, PWA, 멀티플레이]
 featured: true
 appUrl: "https://dev-board-base-ball.vercel.app/"
+presentation:
+  category: "야구 보드게임"
+  tagline: "카드 한 장으로 바뀌는 승부"
+  cover: "/images/projects/board-base-ball.svg"
+  accent: "#205b43"
+  action: "야구 한 판 시작"
+  highlights: [AI 대전, 온라인 1:1, 팀 파티플레이]
 ---
 
 ## 프로젝트 소개

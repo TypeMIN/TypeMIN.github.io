@@ -2,15 +2,17 @@
 import type { CollectionEntry } from 'astro:content';
 import Arrow from './Arrow.astro';
 import ExternalLink from './ExternalLink.astro';
+import ProjectVisual from './ProjectVisual.astro';
 interface Props { project: CollectionEntry<'projects'>; }
 const { project } = Astro.props;
-const { title, summary, tags, appUrl, repoUrl } = project.data;
+const { title, summary, appUrl, repoUrl, presentation } = project.data;
 ---
-{appUrl && <article class="app-card">
+{appUrl && <article class="app-card" style={{ '--project-accent': presentation?.accent ?? '#2456db' }}>
   <a href={appUrl} class="app-launch" target="_blank" rel="noopener noreferrer">
-    <div class="app-card-top"><span class="app-icon" aria-hidden="true">{Array.from(title)[0]}</span><span class="app-launch-label">앱 실행 <Arrow external /></span></div>
-    <h3>{title}</h3><p>{summary}</p><span class="sr-only"> (외부 사이트, 새 탭)</span>
+    <ProjectVisual cover={presentation?.cover} />
+    <div class="app-launch-body"><p class="project-category">{presentation?.category ?? '웹앱 프로젝트'}</p><h3>{title}</h3>{presentation && <p class="app-tagline">{presentation.tagline}</p>}<p class="app-summary">{summary}</p>
+    {presentation && presentation.highlights.length > 0 && <ul class="project-highlights" aria-label="주요 기능">{presentation.highlights.map((item) => <li>{item}</li>)}</ul>}
+    <span class="app-launch-label">{presentation?.action ?? '앱 실행'}<Arrow external /></span></div><span class="sr-only"> (외부 사이트, 새 탭)</span>
   </a>
-  {tags.length > 0 && <ul class="tags" aria-label="사용 기술">{tags.map((tag) => <li>{tag}</li>)}</ul>}
   <div class="app-card-footer"><a href={`/portfolio/${project.id}/`} class="text-link">상세 소개 <Arrow /></a>{repoUrl && <ExternalLink href={repoUrl}>소스 코드</ExternalLink>}</div>
 </article>}

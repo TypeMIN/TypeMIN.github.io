@@ -26,6 +26,14 @@ const projects = defineCollection({
     featured: z.boolean().default(false),
     appUrl: webUrl.optional(),
     repoUrl: webUrl.optional(),
+    presentation: z.object({
+      category: z.string().trim().min(1),
+      tagline: z.string().trim().min(1),
+      cover: z.string().regex(/^\/images\/projects\/[a-z0-9-]+\.(svg|png|webp|jpe?g)$/),
+      accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      action: z.string().trim().min(1).optional(),
+      highlights: z.array(z.string().trim().min(1)).max(3).default([]),
+    }).optional(),
   }),
 });
 

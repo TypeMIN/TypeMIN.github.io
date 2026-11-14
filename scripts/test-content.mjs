@@ -49,6 +49,13 @@ tags: [TypeScript, Astro]
 featured: true
 appUrl: "https://example.com/app"
 repoUrl: "https://github.com/TypeMIN/example"
+presentation:
+  category: "검증용 분류"
+  tagline: "검증용 한 줄 소개"
+  cover: "/images/projects/board-base-ball.svg"
+  accent: "#205b43"
+  action: "검증용 앱 열기"
+  highlights: [기능 하나, 기능 둘]
 ---
 
 ## 검증용 본문
@@ -76,6 +83,12 @@ featured: true
   const app = await readOutput('portfolio/fixture-app/index.html');
   const notes = await readOutput('portfolio/fixture-notes/index.html');
   assert.match(home, /검증용 앱/);
+  assert.match(home, /검증용 분류/);
+  assert.match(home, /검증용 한 줄 소개/);
+  assert.match(home, /src="\/images\/projects\/board-base-ball.svg"/);
+  assert.match(home, /검증용 앱 열기/);
+  assert.match(apps, /기능 하나/);
+  assert.match(app, /검증용 분류/);
   assert.match(home, /검증용 기록/);
   assert.doesNotMatch(home, /대표가 아닌 앱/);
   assert.equal(count(home, 'featured-project'), 2);

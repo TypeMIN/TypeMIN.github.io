@@ -4,6 +4,13 @@ summary: "2026 월드컵의 예측 기록과 경기 결과, 점수·순위를 �
 tags: [Next.js, TypeScript, PWA]
 featured: true
 appUrl: "https://make-your-pick.vercel.app/"
+presentation:
+  category: "월드컵 예측 아카이브"
+  tagline: "우리의 예측, 결과로 다시 보기"
+  cover: "/images/projects/make-your-pick.svg"
+  accent: "#2548ee"
+  action: "예측 기록 보기"
+  highlights: [월드컵 기록, 점수·순위, 공개·초대 공간]
 ---
 
 ## 프로젝트 소개

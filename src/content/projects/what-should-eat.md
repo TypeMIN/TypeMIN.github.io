@@ -4,6 +4,13 @@ summary: "주변 식당을 추천받고 A/B 선택으로 한 끼를 정하는 �
 tags: [Next.js, TypeScript, PWA, IndexedDB]
 featured: true
 appUrl: "https://dev-what-should-eat.vercel.app/local"
+presentation:
+  category: "내 주변 식당 추천"
+  tagline: "오늘의 한 끼, 둘 중 하나로"
+  cover: "/images/projects/what-should-eat.svg"
+  accent: "#a44729"
+  action: "주변 식당 찾기"
+  highlights: [내 주변 추천, A/B 선택, 기기 기록]
 ---
 
 ## 프로젝트 소개

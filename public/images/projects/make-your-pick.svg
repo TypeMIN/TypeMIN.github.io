@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" fill="none">
+  <rect width="640" height="360" fill="#2548ee"/>
+  <circle cx="320" cy="178" r="155" fill="#3559f2"/>
+  <circle cx="320" cy="178" r="113" stroke="#5473fa" stroke-width="1.5"/>
+  <path d="M0 320 640 40M0 360 640 80" stroke="#4969f5" stroke-width="1"/>
+  <g stroke="#9aadff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M73 99h48v49h64M73 197h48v-49M185 148h28v63h41M73 271h87v-60h53"/>
+  </g>
+  <g fill="#dce3ff"><rect x="48" y="87" width="51" height="23" rx="6"/><rect x="48" y="185" width="51" height="23" rx="6"/><rect x="48" y="259" width="51" height="23" rx="6"/></g>
+  <rect x="165" y="137" width="39" height="23" rx="6" fill="#f7f8ff"/>
+  <g>
+    <path d="M263 99h114v70c0 42-22 64-57 64s-57-22-57-64Z" fill="#ffda79"/>
+    <path d="M320 99h57v70c0 42-22 64-57 64Z" fill="#f4bd4e"/>
+    <path d="M263 115h-31v28c0 29 17 43 40 43m105-71h31v28c0 29-17 43-40 43" stroke="#ffda79" stroke-width="13" stroke-linejoin="round"/>
+    <path d="M307 231h26v38h-26Z" fill="#ffda79"/>
+    <path d="M287 265h66v15h-66Z" fill="#f7c75a"/>
+    <rect x="276" y="279" width="88" height="17" rx="5" fill="#ffe7a1"/>
+    <path d="m320 130 8 17 19 3-14 13 3 19-16-9-17 9 3-19-13-13 19-3Z" fill="#fff0ba"/>
+  </g>
+  <g transform="translate(448 85) rotate(8 66 92)">
+    <rect width="131" height="190" rx="12" fill="#102c9a" opacity=".35" transform="translate(7 10)"/>
+    <rect width="131" height="190" rx="12" fill="#f5f7ff"/>
+    <path d="M23 29h55M23 44h35" stroke="#a1b2ef" stroke-width="5" stroke-linecap="round"/>
+    <path d="M19 65h93" stroke="#dce3f8" stroke-width="2"/>
+    <circle cx="28" cy="87" r="9" fill="#f4bd4e"/>
+    <circle cx="28" cy="119" r="9" fill="#b2c0ee"/>
+    <circle cx="28" cy="151" r="9" fill="#d7b5a2"/>
+    <path d="M49 87h54M49 119h42M49 151h29" stroke="#3758dc" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <path d="m229 57 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM399 48l3 10 10 3-10 3-3 10-3-10-10-3 10-3Z" fill="#f9df8c"/>
+  <circle cx="210" cy="297" r="4" fill="#9aafff"/><circle cx="402" cy="306" r="4" fill="#9aafff"/>
+</svg>
