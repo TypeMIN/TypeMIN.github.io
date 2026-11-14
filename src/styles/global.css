@@ -223,7 +223,7 @@ svg { flex-shrink: 0; }
   .featured-project, .project-placeholder { padding: 14px; min-height: 170px; }
   .placeholder-top > .eyebrow { font-size: 7px; letter-spacing: 0; }
   .project-placeholder > p { font-size: 9px; }
-  .featured-project h3 { font-size: 15px; }
+  .featured-project h3 { font-size: 14px; }
   .featured-project > p { font-size: 11px; }
   .home-about { display: block; padding-block: 27px; }
   .home-about h2 { font-size: 19px; }
